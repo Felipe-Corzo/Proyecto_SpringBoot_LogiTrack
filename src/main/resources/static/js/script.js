@@ -12,11 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initEntranceAnimations();
   initAppShellMobileMenu();
   initModalEscapeHandling();
-
+  initMovimientosPage();
+  initNuevoMovimientoPage();
   initLoginPage();
   initDashboardWidgets();
   initBodegasPage();
   initProductosPage();
+  initAuditoriaPage(); 
 });
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -533,3 +535,204 @@ function initProductosPage() {
     });
   }
 }
+
+/* ============================================================================
+   Movimientos (Historial)
+   ============================================================================ */
+   function initMovimientosPage() {
+    const table = document.querySelector('.data-table');
+    // Verifica si estamos en la página correcta (por si usas el mismo script.js en todas)
+    if (!table || document.querySelector('#movement-form')) return; 
+    
+    // Aquí puedes agregar en el futuro la lógica de los filtros de la grilla de arriba,
+    // similar a lo que ya tienes en initProductosPage().
+  }
+  
+  /* ============================================================================
+     Registrar Movimiento
+     ============================================================================ */
+  function initNuevoMovimientoPage() {
+    const form = document.getElementById('movement-form');
+    if (!form) return;
+  
+    const fechaInput = document.getElementById('fecha');
+    const typeSelect = document.getElementById('movement-type');
+    const warehouseSection = document.getElementById('warehouse-section');
+    const origenContainer = document.getElementById('bodega-origen-container');
+    const destinoContainer = document.getElementById('bodega-destino-container');
+    
+    const btnAddProduct = document.getElementById('btn-add-product');
+    const tbody = document.getElementById('products-tbody');
+    const emptyState = document.getElementById('empty-state');
+  
+    // 1. Setear fecha actual
+    if (fechaInput) {
+      fechaInput.valueAsDate = new Date();
+    }
+  
+    // 2. Lógica para mostrar/ocultar bodegas
+    typeSelect.addEventListener('change', () => {
+      const type = typeSelect.value;
+      
+      warehouseSection.classList.remove('hidden');
+      origenContainer.classList.add('hidden');
+      destinoContainer.classList.add('hidden');
+  
+      if (type === 'ENTRADA') {
+        destinoContainer.classList.remove('hidden');
+        document.getElementById('bodega-destino').required = true;
+        document.getElementById('bodega-origen').required = false;
+      } else if (type === 'SALIDA') {
+        origenContainer.classList.remove('hidden');
+        document.getElementById('bodega-origen').required = true;
+        document.getElementById('bodega-destino').required = false;
+      } else if (type === 'TRANSFERENCIA') {
+        origenContainer.classList.remove('hidden');
+        destinoContainer.classList.remove('hidden');
+        document.getElementById('bodega-origen').required = true;
+        document.getElementById('bodega-destino').required = true;
+      } else {
+        warehouseSection.classList.add('hidden');
+      }
+    });
+  
+    // 3. Agregar filas dinámicas
+    btnAddProduct.addEventListener('click', () => {
+      emptyState.classList.remove('is-visible');
+  
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="select-wrapper">
+            <select class="form-select border-transparent" required>
+              <option value="" disabled selected>Seleccionar producto...</option>
+              <option value="P1">Laptop ThinkPad T14</option>
+              <option value="P2">Monitor Dell 27"</option>
+              <option value="P3">Teclado Mecánico Keychron</option>
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </td>
+        <td>
+          <input type="number" min="1" value="1" class="form-input form-input--mono border-transparent text-right" required>
+        </td>
+        <td class="is-center">
+          <button type="button" class="row-action-btn row-action-btn--danger btn-remove-row" title="Eliminar">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        </td>
+      `;
+      
+      // Animación sutil de entrada (respetando prefersReducedMotion del archivo base)
+      if (!prefersReducedMotion) {
+        tr.style.opacity = '0';
+        tr.style.transform = 'translateY(-10px)';
+        tr.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        tbody.appendChild(tr);
+        
+        requestAnimationFrame(() => {
+          tr.style.opacity = '1';
+          tr.style.transform = 'translateY(0)';
+        });
+      } else {
+        tbody.appendChild(tr);
+      }
+    });
+  
+    // 4. Delegación de eventos para eliminar filas
+    tbody.addEventListener('click', (event) => {
+      const btnRemove = event.target.closest('.btn-remove-row');
+      if (!btnRemove) return;
+  
+      const row = btnRemove.closest('tr');
+      
+      if (!prefersReducedMotion) {
+        row.style.opacity = '0';
+        row.style.transform = 'scale(0.98)';
+        row.addEventListener('transitionend', () => {
+          row.remove();
+          checkEmptyState();
+        });
+      } else {
+        row.remove();
+        checkEmptyState();
+      }
+    });
+  
+    function checkEmptyState() {
+      if (tbody.children.length === 0) {
+        emptyState.classList.add('is-visible');
+      }
+    }
+  
+    // 5. Submit form logic
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      if (tbody.children.length === 0) {
+        alert("Debes agregar al menos un producto al movimiento.");
+        return;
+      }
+      
+      // Lógica para enviar al backend
+      alert("Movimiento guardado con éxito (Simulación)");
+      window.location.href = "movimientos.html";
+    });
+  }
+/* ============================================================================
+   Auditoría de Cambios
+   ============================================================================ */
+   function initAuditoriaPage() {
+    const auditTable = document.getElementById('audit-table');
+    const auditModal = document.getElementById('audit-modal-backdrop');
+    if (!auditTable || !auditModal) return;
+  
+    const viewButtons = auditTable.querySelectorAll('[data-action="view"]');
+    const dismissButtons = auditModal.querySelectorAll('[data-modal-dismiss]');
+    const exportBtn = document.getElementById('btn-export-csv');
+  
+    // Abrir modal
+    function openModal() {
+      auditModal.classList.add('is-open');
+    }
+  
+    // Cerrar modal
+    function closeModal() {
+      auditModal.classList.remove('is-open');
+    }
+  
+    // Asignar evento a cada botón de la tabla
+    viewButtons.forEach((btn) => {
+      btn.addEventListener('click', openModal);
+    });
+  
+    // Asignar eventos de cierre
+    dismissButtons.forEach((btn) => {
+      btn.addEventListener('click', closeModal);
+    });
+  
+    // Cerrar al hacer clic fuera del modal (backdrop)
+    auditModal.addEventListener('click', (event) => {
+      if (event.target === auditModal) {
+        closeModal();
+      }
+    });
+  
+    // Exportar CSV
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const originalHTML = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<span class="material-symbols-outlined icon-sm">sync</span> Generando...';
+  
+        setTimeout(() => {
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = originalHTML;
+          alert('Reporte de auditoría exportado correctamente.');
+        }, 700);
+      });
+    }
+  }

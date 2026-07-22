@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrar Movimiento - LogiTrack</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
+
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar__header">
+      <div class="sidebar__logo"><span class="material-symbols-outlined">view_in_ar</span></div>
+      <div><h1 class="sidebar__title">LogiTrack</h1></div>
+    </div>
+    <nav class="sidebar__nav">
+      <a class="sidebar__link" href="dashboard.html"><span class="material-symbols-outlined icon-lg">dashboard</span> Dashboard</a>
+      <a class="sidebar__link is-active" href="movimientos.html"><span class="material-symbols-outlined is-filled icon-lg">swap_horiz</span> Movimientos</a>
+    </nav>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu-btn" type="button"><span class="material-symbols-outlined">menu</span></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="content__inner">
+
+        <div class="page-header" data-animate style="animation-delay:0ms">
+          <a href="movimientos.html" class="back-link">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Volver a Movimientos
+          </a>
+          <h2 class="content__title text-display">Registrar Movimiento</h2>
+          <p class="content__subtitle">Crea una nueva transacción de inventario.</p>
+        </div>
+
+        <form id="movement-form" class="panel form-panel" data-animate style="animation-delay:70ms" novalidate>
+          
+          <div class="panel__section bg-soft">
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="movement-type">Tipo de Movimiento</label>
+                <div class="select-wrapper">
+                  <select class="form-select" id="movement-type" required>
+                    <option value="" disabled selected>Seleccione tipo...</option>
+                    <option value="ENTRADA">ENTRADA</option>
+                    <option value="SALIDA">SALIDA</option>
+                    <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                  </select>
+                  <span class="material-symbols-outlined">expand_more</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="usuario">Usuario</label>
+                <input class="form-input form-input--readonly" id="usuario" readonly type="text" value="Admin LogiTrack">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="fecha">Fecha</label>
+                <input class="form-input" id="fecha" type="date" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel__section hidden" id="warehouse-section">
+            <div class="form-grid-2">
+              <div class="form-group hidden" id="bodega-origen-container">
+                <label class="form-label" for="bodega-origen">Bodega Origen</label>
+                <div class="select-wrapper">
+                  <select class="form-select" id="bodega-origen">
+                    <option value="" disabled selected>Seleccione origen...</option>
+                    <option value="B1">Bodega Central</option>
+                    <option value="B2">Bodega Norte</option>
+                  </select>
+                  <span class="material-symbols-outlined">expand_more</span>
+                </div>
+              </div>
+
+              <div class="form-group hidden" id="bodega-destino-container">
+                <label class="form-label" for="bodega-destino">Bodega Destino</label>
+                <div class="select-wrapper">
+                  <select class="form-select" id="bodega-destino">
+                    <option value="" disabled selected>Seleccione destino...</option>
+                    <option value="B1">Bodega Central</option>
+                    <option value="B2">Bodega Norte</option>
+                  </select>
+                  <span class="material-symbols-outlined">expand_more</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel__section">
+            <div class="panel__section-header">
+              <h3 class="panel__title">Productos</h3>
+              <button class="toolbar-btn toolbar-btn--outline btn-sm" type="button" id="btn-add-product">
+                <span class="material-symbols-outlined icon-sm">add</span> Agregar producto
+              </button>
+            </div>
+
+            <div class="data-table-wrapper border-rounded">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th style="width: 120px;">Cantidad</th>
+                    <th class="is-center" style="width: 80px;">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="products-tbody">
+                  </tbody>
+              </table>
+              
+              <div class="table-empty-state is-visible" id="empty-state">
+                <span class="material-symbols-outlined">package_2</span>
+                <p>No hay productos agregados.</p>
+                <span class="font-label-md">Haga clic en 'Agregar producto' para comenzar.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel__footer">
+            <a href="movimientos.html" class="toolbar-btn toolbar-btn--outline">Cancelar</a>
+            <button class="toolbar-btn toolbar-btn--primary" type="submit">
+              <span class="material-symbols-outlined icon-sm">save</span> Guardar
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </main>
+  </div>
+  <div class="mobile-overlay"></div>
+</div>
+<script src="../js/script.js"></script>
+</body>
+</html>
