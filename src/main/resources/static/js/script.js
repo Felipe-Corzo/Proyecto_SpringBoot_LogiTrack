@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initEntranceAnimations();
   initAppShellMobileMenu();
   initModalEscapeHandling();
-
+  initMovimientosPage();
+  initNuevoMovimientoPage();
   initLoginPage();
   initDashboardWidgets();
   initBodegasPage();
