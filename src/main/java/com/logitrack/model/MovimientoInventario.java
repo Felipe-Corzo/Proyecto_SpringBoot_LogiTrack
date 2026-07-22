@@ -1,22 +1,27 @@
 package com.logitrack.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.logitrack.audit.Auditable;
+import com.logitrack.audit.AuditListener;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "movimientos_inventario")
+@EntityListeners(AuditListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MovimientoInventario {
+public class MovimientoInventario implements Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,5 +66,28 @@ public class MovimientoInventario {
     public void agregarDetalle(MovimientoDetalle detalle) {
         detalles.add(detalle);
         detalle.setMovimiento(this);
+    }
+
+    // --- Soporte para auditoria automatica (no se persiste) ---
+    @Transient
+    private String auditSnapshot;
+
+    @Override
+    public Map<String, Object> auditFields() {
+        // No incluimos "detalles" (coleccion): el detalle de que productos y
+        // cantidades se movieron ya queda registrado en movimiento_detalle,
+        // no hace falta duplicarlo en la auditoria.
+        Map<String, Object> campos = new LinkedHashMap<>();
+        campos.put("fecha", fecha);
+        campos.put("tipoMovimiento", tipoMovimiento);
+        campos.put("usuarioId", usuario != null ? usuario.getId() : null);
+        campos.put("bodegaOrigenId", bodegaOrigen != null ? bodegaOrigen.getId() : null);
+        campos.put("bodegaDestinoId", bodegaDestino != null ? bodegaDestino.getId() : null);
+        return campos;
+    }
+
+    @Override
+    public Object getAuditId() {
+        return id;
     }
 }
