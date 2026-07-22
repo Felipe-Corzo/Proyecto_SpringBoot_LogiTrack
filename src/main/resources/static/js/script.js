@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initLoginPage();
   initDashboardWidgets();
   initBodegasPage();
+  initProductosPage();
 });
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -356,4 +357,179 @@ function initBodegasPage() {
       btn.classList.add('is-active');
     });
   });
+}
+
+/* ============================================================================
+   Productos (listado + filtros combinados + modal crear/editar + eliminar)
+   ============================================================================ */
+function initProductosPage() {
+  const table = document.getElementById('products-table');
+  if (!table) return;
+
+  const rows = () => Array.from(table.querySelectorAll('tbody tr'));
+  const emptyState = document.getElementById('products-empty-state');
+
+  // ---------------------------------------------------------------------
+  // Filtros combinados: búsqueda + categoría + solo stock bajo
+  // ---------------------------------------------------------------------
+  const searchInputs = [
+    document.getElementById('product-search-desktop'),
+    document.getElementById('product-search-mobile'),
+  ].filter(Boolean);
+  const categorySelect = document.getElementById('product-category-filter');
+  const lowStockCheckbox = document.getElementById('product-low-stock-filter');
+
+  function applyFilters() {
+    const term = (searchInputs.find((i) => i.value)?.value || '').trim().toLowerCase();
+    const category = categorySelect ? categorySelect.value : '';
+    const onlyLowStock = lowStockCheckbox ? lowStockCheckbox.checked : false;
+
+    let visibleCount = 0;
+
+    rows().forEach((row) => {
+      const name = (row.dataset.name || '').toLowerCase();
+      const id = (row.dataset.id || '').toLowerCase();
+      const rowCategory = row.dataset.category || '';
+      const isLowStock = row.classList.contains('is-low-stock');
+
+      const matchesTerm = !term || name.includes(term) || id.includes(term);
+      const matchesCategory = !category || rowCategory === category;
+      const matchesStock = !onlyLowStock || isLowStock;
+
+      const visible = matchesTerm && matchesCategory && matchesStock;
+      row.classList.toggle('is-hidden-by-filter', !visible);
+      if (visible) visibleCount += 1;
+    });
+
+    if (emptyState) emptyState.classList.toggle('is-visible', visibleCount === 0);
+  }
+
+  // Mantiene sincronizados los dos campos de búsqueda (desktop y mobile)
+  searchInputs.forEach((input) => {
+    input.addEventListener('input', () => {
+      searchInputs.forEach((other) => {
+        if (other !== input) other.value = input.value;
+      });
+      applyFilters();
+    });
+  });
+  if (categorySelect) categorySelect.addEventListener('change', applyFilters);
+  if (lowStockCheckbox) lowStockCheckbox.addEventListener('change', applyFilters);
+
+  // ---------------------------------------------------------------------
+  // Modal crear / editar producto
+  // ---------------------------------------------------------------------
+  const productModal = document.getElementById('product-modal-backdrop');
+  const productForm = document.getElementById('product-form');
+  const productModalTitle = document.getElementById('product-modal-title');
+  const openCreateBtn = document.getElementById('open-create-product-modal-btn');
+
+  function openProductModal(mode, data) {
+    if (!productModal) return;
+    productModalTitle.textContent = mode === 'edit' ? 'Editar Producto' : 'Nuevo Producto';
+    productForm.reset();
+
+    if (data) {
+      productForm.elements.nombre.value = data.name || '';
+      productForm.elements.categoria.value = data.category || '';
+      productForm.elements.stock.value = data.stock ?? '';
+      productForm.elements.precio.value = data.price ?? '';
+    }
+
+    productModal.classList.add('is-open');
+    requestAnimationFrame(() => productForm.elements.nombre.focus());
+  }
+
+  function closeProductModal() {
+    if (productModal) productModal.classList.remove('is-open');
+  }
+
+  if (openCreateBtn) openCreateBtn.addEventListener('click', () => openProductModal('create'));
+
+  if (productModal) {
+    productModal.querySelectorAll('[data-modal-dismiss]').forEach((btn) => {
+      btn.addEventListener('click', closeProductModal);
+    });
+    productModal.addEventListener('click', (event) => {
+      if (event.target === productModal) closeProductModal();
+    });
+  }
+
+  if (productForm) {
+    productForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!productForm.checkValidity()) {
+        productForm.reportValidity();
+        return;
+      }
+      // Aquí se conectaría la llamada real al backend (POST/PUT /productos).
+      closeProductModal();
+    });
+  }
+
+  rows().forEach((row) => {
+    const editBtn = row.querySelector('[data-action="edit"]');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        openProductModal('edit', {
+          name: row.dataset.name,
+          category: row.dataset.category,
+          stock: row.dataset.stock,
+          price: row.dataset.price,
+        });
+      });
+    }
+  });
+
+  // ---------------------------------------------------------------------
+  // Modal de confirmación para eliminar
+  // ---------------------------------------------------------------------
+  const deleteModal = document.getElementById('delete-product-modal-backdrop');
+  const deleteModalName = document.getElementById('delete-product-modal-name');
+  const deleteConfirmBtn = document.getElementById('delete-product-modal-confirm');
+  let rowPendingDelete = null;
+
+  rows().forEach((row) => {
+    const deleteBtn = row.querySelector('[data-action="delete"]');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        rowPendingDelete = row;
+        if (deleteModalName) deleteModalName.textContent = row.dataset.name || 'este producto';
+        if (deleteModal) deleteModal.classList.add('is-open');
+      });
+    }
+  });
+
+  function closeDeleteModal() {
+    if (deleteModal) deleteModal.classList.remove('is-open');
+    rowPendingDelete = null;
+  }
+
+  if (deleteModal) {
+    deleteModal.querySelectorAll('[data-modal-dismiss]').forEach((btn) => {
+      btn.addEventListener('click', closeDeleteModal);
+    });
+    deleteModal.addEventListener('click', (event) => {
+      if (event.target === deleteModal) closeDeleteModal();
+    });
+  }
+
+  if (deleteConfirmBtn) {
+    deleteConfirmBtn.addEventListener('click', () => {
+      if (!rowPendingDelete) {
+        closeDeleteModal();
+        return;
+      }
+      const row = rowPendingDelete;
+      closeDeleteModal();
+
+      // Aquí se conectaría la llamada real al backend (DELETE /productos/{id}).
+      if (prefersReducedMotion) {
+        row.remove();
+      } else {
+        row.classList.add('is-removing');
+        row.addEventListener('animationend', () => row.remove(), { once: true });
+      }
+    });
+  }
 }
