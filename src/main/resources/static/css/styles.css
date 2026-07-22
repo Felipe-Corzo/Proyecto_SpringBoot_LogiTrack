@@ -1,0 +1,424 @@
+/* ============================================================================
+   LogiTrack — Login
+   CSS puro (sin frameworks). Tokens de diseño tomados de DESIGN.md
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------
+   1. Reset mínimo
+   ---------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+/* ----------------------------------------------------------------------
+   2. Design tokens (colores, tipografía, spacing, radios) — DESIGN.md
+   ---------------------------------------------------------------------- */
+:root {
+  /* Color */
+  --color-background: #f7f9fb;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #45464d;
+  --color-outline: #76777d;
+  --color-outline-variant: #c6c6cd;
+  --color-outline-variant-30: rgba(198, 198, 205, 0.3);
+
+  --color-primary-container: #131b2e;
+  --color-primary-container-hover: #1c2438;
+  --color-on-primary: #ffffff;
+
+  --color-error: #ba1a1a;
+  --color-error-20: rgba(186, 26, 26, 0.2);
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-focus: #3b82f6;
+  --color-focus-ring: rgba(59, 130, 246, 0.35);
+  --color-primary-container-ring: rgba(19, 27, 46, 0.45);
+
+  /* Tipografía */
+  --font-family-base: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+
+  --font-display-size: 36px;
+  --font-display-line: 44px;
+  --font-display-weight: 700;
+  --font-display-tracking: -0.02em;
+
+  --font-headline-md-size: 20px;
+  --font-headline-md-line: 28px;
+  --font-headline-md-weight: 600;
+
+  --font-body-md-size: 14px;
+  --font-body-md-line: 20px;
+  --font-body-md-weight: 400;
+
+  --font-label-md-size: 12px;
+  --font-label-md-line: 16px;
+  --font-label-md-weight: 500;
+
+  /* Spacing */
+  --gutter: 1.5rem;
+
+  /* Radios */
+  --radius-sm: 0.125rem;  /* "rounded" */
+  --radius-md: 0.25rem;   /* "rounded-lg" */
+  --radius-lg: 0.5rem;    /* "rounded-xl" */
+
+  /* Sombra (Level 2 del design system) */
+  --shadow-card: 0px 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* ----------------------------------------------------------------------
+   3. Ícono (Material Symbols) — snippet estándar de Google, no un framework
+   ---------------------------------------------------------------------- */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  transition: transform 0.25s ease;
+}
+
+/* ----------------------------------------------------------------------
+   4. Layout base
+   ---------------------------------------------------------------------- */
+.page {
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-family-base);
+  font-size: var(--font-body-md-size);
+  line-height: var(--font-body-md-line);
+  font-weight: var(--font-body-md-weight);
+  -webkit-font-smoothing: antialiased;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-shell {
+  width: 100%;
+  max-width: 28rem; /* 448px */
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+  position: relative;
+  z-index: 10;
+}
+
+@media (min-width: 768px) {
+  .login-shell {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   5. Card
+   ---------------------------------------------------------------------- */
+.login-card {
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant-30);
+  border-radius: var(--radius-md);
+  padding: 2.5rem 2rem; /* py-10 px-8 */
+  width: 100%;
+  position: relative;
+
+  box-shadow: 0 0 0 rgba(15, 23, 42, 0);
+  transition: box-shadow 0.4s ease;
+}
+
+.login-card.is-settled {
+  box-shadow: var(--shadow-card);
+}
+
+.login-card__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-card__logo {
+  font-family: var(--font-family-base);
+  font-size: var(--font-display-size);
+  line-height: var(--font-display-line);
+  font-weight: var(--font-display-weight);
+  letter-spacing: var(--font-display-tracking);
+  color: var(--color-primary-container);
+  margin: 0 0 0.5rem 0;
+}
+
+.login-card__title {
+  font-size: var(--font-headline-md-size);
+  line-height: var(--font-headline-md-line);
+  font-weight: var(--font-headline-md-weight);
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+
+/* ----------------------------------------------------------------------
+   6. Alertas / mensajes de error
+   ---------------------------------------------------------------------- */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--gutter);
+  font-size: var(--font-label-md-size);
+  line-height: var(--font-label-md-line);
+  font-weight: var(--font-label-md-weight);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.alert--error {
+  background-color: var(--color-error-container);
+  color: var(--color-on-error-container);
+  border: 1px solid var(--color-error-20);
+}
+
+.alert__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ----------------------------------------------------------------------
+   7. Formulario
+   ---------------------------------------------------------------------- */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* space-y-6 */
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* space-y-2 */
+}
+
+.form-label {
+  font-size: var(--font-label-md-size);
+  line-height: var(--font-label-md-line);
+  font-weight: var(--font-label-md-weight);
+  color: var(--color-on-surface-variant);
+}
+
+.form-input {
+  width: 100%;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  color: var(--color-on-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input::placeholder {
+  color: var(--color-outline);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 1px var(--color-focus);
+}
+
+.form-input.has-error {
+  border-color: var(--color-error);
+}
+
+.form-input.has-error:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field .form-input {
+  padding-right: 2.5rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  padding-right: 0.75rem;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-outline);
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--color-on-surface-variant);
+}
+
+#toggleIcon.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.form-actions {
+  padding-top: 0.5rem;
+}
+
+/* ----------------------------------------------------------------------
+   8. Botón primario
+   ---------------------------------------------------------------------- */
+.btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-label-md-size);
+  line-height: var(--font-label-md-line);
+  font-weight: var(--font-label-md-weight);
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.15s ease;
+}
+
+.btn--primary {
+  background-color: var(--color-primary-container);
+  color: var(--color-on-primary);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background-color: var(--color-primary-container-hover);
+}
+
+.btn--primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--color-surface-container-lowest), 0 0 0 3px var(--color-primary-container-ring);
+}
+
+.btn--primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.btn__icon {
+  font-size: 18px;
+}
+
+.btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 9999px;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ----------------------------------------------------------------------
+   9. Footer
+   ---------------------------------------------------------------------- */
+.login-footer {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: var(--font-label-md-size);
+  line-height: var(--font-label-md-line);
+  font-weight: var(--font-label-md-weight);
+  color: var(--color-outline);
+}
+
+/* ----------------------------------------------------------------------
+   10. Utilidad
+   ---------------------------------------------------------------------- */
+.hidden {
+  display: none !important;
+}
+
+/* ----------------------------------------------------------------------
+   11. Animaciones
+   ---------------------------------------------------------------------- */
+[data-animate] {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+[data-animate].is-visible {
+  animation: fadeInUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+.shake-on-error {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------------------------------------------------
+   12. Accesibilidad: respeta prefers-reduced-motion
+   ---------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  [data-animate],
+  .shake-on-error,
+  #toggleIcon,
+  .btn,
+  .btn-spinner,
+  .alert {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
