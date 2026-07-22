@@ -2135,3 +2135,188 @@ input {
 .data-table tbody tr.row-highlight {
   border-left: 3px solid var(--color-focus);
 }
+/* ============================================================================
+   Auditoría de Cambios y Modal Diff View
+   ============================================================================ */
+
+/* Iconos integrados en Selects */
+.select-icon-left {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-outline);
+  font-size: 18px;
+  pointer-events: none;
+}
+.has-icon-left {
+  padding-left: 2.25rem !important;
+}
+
+/* Badges para Operaciones CRUD */
+.status-badge--insert {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+  border: 1px solid rgba(4, 120, 87, 0.2);
+}
+.status-badge--update {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid rgba(146, 64, 14, 0.2);
+}
+.status-badge--delete {
+  background-color: var(--color-error-container);
+  color: var(--color-on-error-container);
+  border: 1px solid var(--color-error);
+}
+
+/* Celdas personalizadas */
+.cell-mono {
+  font-family: var(--font-family-mono);
+  color: var(--color-on-surface-variant);
+  font-size: 13px;
+}
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-on-surface);
+}
+.avatar--sm {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+.bg-danger {
+  background-color: var(--color-error-container);
+  color: var(--color-on-error-container);
+}
+.entity-cell {
+  display: flex;
+  flex-direction: column;
+}
+.entity-cell__title {
+  font-weight: 500;
+  color: var(--color-on-surface);
+}
+.entity-cell__subtitle {
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+}
+
+/* Header de tabla responsivo */
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-outline-variant-30);
+}
+
+/* Tamaño de Modal Ancho (Diff View) */
+.modal--lg {
+  max-width: 54rem; /* ~864px */
+  width: 100%;
+}
+
+/* Grupo de Badges en Modal */
+.info-badges-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.35rem 0.75rem;
+  background-color: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-on-surface);
+}
+.info-badge--accent {
+  background-color: var(--color-secondary-container);
+  border-color: var(--color-outline-variant);
+  color: var(--color-primary-container);
+}
+
+/* Rejilla de Comparación (Diff) */
+.diff-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background-color: var(--color-outline-variant);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .diff-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.diff-panel {
+  background-color: var(--color-surface-container-lowest);
+  display: flex;
+  flex-direction: column;
+}
+.diff-panel__header {
+  padding: 0.625rem 1rem;
+  background-color: var(--color-surface-container-low);
+  border-bottom: 1px solid var(--color-outline-variant);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-secondary);
+}
+.diff-panel__content {
+  overflow-x: auto;
+}
+.diff-table {
+  width: 100%;
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  text-align: left;
+  border-collapse: collapse;
+}
+.diff-table td {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-surface-container-high);
+}
+.diff-table tr:last-child td {
+  border-bottom: none;
+}
+.diff-table td:first-child {
+  color: var(--color-secondary);
+  width: 40%;
+}
+.diff-row--removed {
+  background-color: #fef2f2;
+}
+.diff-row--removed td:last-child {
+  color: var(--color-error);
+  text-decoration: line-through;
+}
+.diff-row--added {
+  background-color: #d1fae5;
+}
+.diff-row--added td:last-child {
+  color: var(--color-success-text);
+  font-weight: 600;
+}
+
+/* Caja de Notas solo lectura */
+.read-only-box {
+  padding: 0.75rem 1rem;
+  background-color: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-sm);
+  color: var(--color-on-surface);
+  font-size: 13px;
+  line-height: 1.5;
+}

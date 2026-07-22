@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDashboardWidgets();
   initBodegasPage();
   initProductosPage();
+  initAuditoriaPage(); 
 });
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -679,4 +680,58 @@ function initProductosPage() {
       alert("Movimiento guardado con éxito (Simulación)");
       window.location.href = "movimientos.html";
     });
+  }
+/* ============================================================================
+   Auditoría de Cambios
+   ============================================================================ */
+   function initAuditoriaPage() {
+    const auditTable = document.getElementById('audit-table');
+    const auditModal = document.getElementById('audit-modal-backdrop');
+    if (!auditTable || !auditModal) return;
+  
+    const viewButtons = auditTable.querySelectorAll('[data-action="view"]');
+    const dismissButtons = auditModal.querySelectorAll('[data-modal-dismiss]');
+    const exportBtn = document.getElementById('btn-export-csv');
+  
+    // Abrir modal
+    function openModal() {
+      auditModal.classList.add('is-open');
+    }
+  
+    // Cerrar modal
+    function closeModal() {
+      auditModal.classList.remove('is-open');
+    }
+  
+    // Asignar evento a cada botón de la tabla
+    viewButtons.forEach((btn) => {
+      btn.addEventListener('click', openModal);
+    });
+  
+    // Asignar eventos de cierre
+    dismissButtons.forEach((btn) => {
+      btn.addEventListener('click', closeModal);
+    });
+  
+    // Cerrar al hacer clic fuera del modal (backdrop)
+    auditModal.addEventListener('click', (event) => {
+      if (event.target === auditModal) {
+        closeModal();
+      }
+    });
+  
+    // Exportar CSV
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const originalHTML = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<span class="material-symbols-outlined icon-sm">sync</span> Generando...';
+  
+        setTimeout(() => {
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = originalHTML;
+          alert('Reporte de auditoría exportado correctamente.');
+        }, 700);
+      });
+    }
   }
