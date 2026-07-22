@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movimientos de Inventario - LogiTrack</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
+
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar__header">
+      <div class="sidebar__logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L21 7V17L12 22L3 17V7L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M3 7L12 12L21 7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M12 12V22" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="sidebar__title">LogiTrack</h1>
+        <span class="sidebar__subtitle">Warehouse Management</span>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <a class="sidebar__link" href="dashboard.html">
+        <span class="material-symbols-outlined icon-lg">dashboard</span>
+        Dashboard
+      </a>
+      <a class="sidebar__link" href="bodegas.html">
+        <span class="material-symbols-outlined icon-lg">inventory_2</span>
+        Bodegas
+      </a>
+      <a class="sidebar__link" href="productos.html">
+        <span class="material-symbols-outlined icon-lg">package_2</span>
+        Productos
+      </a>
+      <a class="sidebar__link is-active" href="#">
+        <span class="material-symbols-outlined is-filled icon-lg">swap_horiz</span>
+        Movimientos
+      </a>
+      <a class="sidebar__link" href="#">
+        <span class="material-symbols-outlined icon-lg">history_edu</span>
+        Auditoría
+      </a>
+    </nav>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu-btn" type="button" aria-label="Abrir menú">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div class="search-field">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" placeholder="Buscar movimientos...">
+        </div>
+      </div>
+      <div class="topbar__right">
+        <div class="avatar" title="Administrador">AD</div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="content__inner">
+
+        <div class="page-toolbar" data-animate style="animation-delay:0ms">
+          <div>
+            <h2 class="content__title">Movimientos de Inventario</h2>
+            <p class="content__subtitle">Registro y auditoría de entradas, salidas y transferencias.</p>
+          </div>
+          <a href="nuevo-movimiento.html" class="toolbar-btn toolbar-btn--primary">
+            <span class="material-symbols-outlined icon-sm">add</span>
+            Registrar Movimiento
+          </a>
+        </div>
+
+        <div class="filters-bar form-grid-4" data-animate style="animation-delay:70ms">
+          <div class="form-group">
+            <label class="form-label text-uppercase">Fecha (Desde)</label>
+            <input class="form-input" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label text-uppercase">Fecha (Hasta)</label>
+            <input class="form-input" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label text-uppercase">Tipo de Movimiento</label>
+            <div class="select-wrapper">
+              <select class="form-select">
+                <option>Todos</option>
+                <option>ENTRADA</option>
+                <option>SALIDA</option>
+                <option>TRANSFERENCIA</option>
+              </select>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-uppercase">Bodega</label>
+            <div class="select-wrapper">
+              <select class="form-select">
+                <option>Todas las Bodegas</option>
+                <option>Bodega Central (BOG-01)</option>
+                <option>Centro Distribución Norte (MED-02)</option>
+              </select>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card" data-animate style="animation-delay:140ms">
+          <div class="table-card__scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Usuario Responsable</th>
+                  <th>Origen</th>
+                  <th>Destino</th>
+                  <th class="is-right">Productos</th>
+                  <th class="is-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="cell-muted">24 Oct 2023 14:30</td>
+                  <td><span class="status-badge status-badge--success">ENTRADA</span></td>
+                  <td>Carlos Mendoza</td>
+                  <td class="cell-muted">-</td>
+                  <td class="product-cell__name">BOG-01</td>
+                  <td class="is-right"><span class="metric-cell__value">1,250 un.</span></td>
+                  <td class="is-center">
+                    <button class="row-action-btn" type="button"><span class="material-symbols-outlined">more_vert</span></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cell-muted">24 Oct 2023 11:15</td>
+                  <td><span class="status-badge status-badge--danger">SALIDA</span></td>
+                  <td>Ana Rivera</td>
+                  <td class="product-cell__name">BOG-01</td>
+                  <td class="cell-muted">Cliente (Ext)</td>
+                  <td class="is-right"><span class="metric-cell__value">45 un.</span></td>
+                  <td class="is-center">
+                    <button class="row-action-btn" type="button"><span class="material-symbols-outlined">more_vert</span></button>
+                  </td>
+                </tr>
+                <tr class="row-highlight">
+                  <td class="cell-muted">23 Oct 2023 09:00</td>
+                  <td><span class="status-badge status-badge--info">TRANSFERENCIA</span></td>
+                  <td>Luis Vargas</td>
+                  <td class="product-cell__name">BOG-01</td>
+                  <td class="product-cell__name">MED-02</td>
+                  <td class="is-right"><span class="metric-cell__value">500 un.</span></td>
+                  <td class="is-center">
+                    <button class="row-action-btn" type="button"><span class="material-symbols-outlined">more_vert</span></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span class="pagination__info">Mostrando 1 a 3 de 1,024 movimientos</span>
+            <div class="pagination__controls">
+              <button class="pagination__btn" type="button" disabled><span class="material-symbols-outlined icon-sm">chevron_left</span></button>
+              <button class="pagination__btn is-active" type="button">1</button>
+              <button class="pagination__btn" type="button">2</button>
+              <span class="pagination__ellipsis">…</span>
+              <button class="pagination__btn" type="button"><span class="material-symbols-outlined icon-sm">chevron_right</span></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <div class="mobile-overlay"></div>
+</div>
+<script src="../js/script.js"></script>
+</body>
+</html>
