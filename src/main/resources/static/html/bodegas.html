@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Bodegas - LogiTrack</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
+
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar__header">
+      <div class="sidebar__logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 2L21 7V17L12 22L3 17V7L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M3 7L12 12L21 7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M12 12V22" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="sidebar__title">LogiTrack</h1>
+        <span class="sidebar__subtitle">Warehouse Management</span>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <a class="sidebar__link" href="../index.html">
+        <span class="material-symbols-outlined icon-lg">dashboard</span>
+        Dashboard
+      </a>
+      <a class="sidebar__link is-active" href="#">
+        <span class="material-symbols-outlined is-filled icon-lg">inventory_2</span>
+        Bodegas
+      </a>
+      <a class="sidebar__link" href="#">
+        <span class="material-symbols-outlined icon-lg">package_2</span>
+        Productos
+      </a>
+      <a class="sidebar__link" href="#">
+        <span class="material-symbols-outlined icon-lg">swap_horiz</span>
+        Movimientos
+      </a>
+      <a class="sidebar__link" href="#">
+        <span class="material-symbols-outlined icon-lg">history_edu</span>
+        Auditoría
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <a class="sidebar__link" href="#">
+        <span class="material-symbols-outlined icon-md">help</span>
+        Ayuda
+      </a>
+      <a class="sidebar__link" href="#">
+        <span class="material-symbols-outlined icon-md">settings</span>
+        Configuración
+      </a>
+    </div>
+  </aside>
+
+  <!-- Contenido principal -->
+  <div class="main-wrapper">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu-btn" type="button" aria-label="Abrir menú">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div class="search-field">
+          <span class="material-symbols-outlined">search</span>
+          <input id="bodega-search" type="text" placeholder="Buscar bodega (nombre o ubicación)...">
+        </div>
+      </div>
+
+      <div class="topbar__right">
+        <button class="icon-btn" type="button" title="Notificaciones" aria-label="Notificaciones">
+          <span class="material-symbols-outlined">notifications</span>
+          <span class="icon-btn__dot"></span>
+        </button>
+        <button class="icon-btn" type="button" title="Configuración" aria-label="Configuración">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
+        <div class="topbar__divider"></div>
+        <button class="logout-btn" type="button">
+          <span class="material-symbols-outlined icon-sm">logout</span>
+          Cerrar sesión
+        </button>
+        <div class="avatar" title="Administrador">AD</div>
+      </div>
+    </header>
+
+    <!-- Contenido scrolleable -->
+    <main class="content">
+      <div class="content__inner">
+
+        <div class="page-toolbar" data-animate style="animation-delay:0ms">
+          <div>
+            <h2 class="content__title">Gestión de Bodegas</h2>
+            <p class="content__subtitle">Administra y supervisa las ubicaciones de almacenamiento.</p>
+          </div>
+          <div class="page-toolbar__actions">
+            <button class="toolbar-btn toolbar-btn--outline" type="button" id="filter-btn">
+              <span class="material-symbols-outlined icon-sm">filter_list</span>
+              Filtros
+            </button>
+            <button class="toolbar-btn toolbar-btn--primary" type="button" id="open-create-modal-btn">
+              <span class="material-symbols-outlined icon-sm">add</span>
+              Nueva Bodega
+            </button>
+          </div>
+        </div>
+
+        <div class="table-card" data-animate style="animation-delay:80ms">
+          <div class="table-card__scroll">
+            <table class="data-table" id="bodegas-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Ubicación</th>
+                  <th class="is-right">Capacidad</th>
+                  <th>Estado</th>
+                  <th>Encargado</th>
+                  <th class="is-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-name="Centro de Distribución Norte" data-location="Monterrey, NL" data-capacity="14000" data-manager="Carlos Rivera">
+                  <td class="metric-cell__value">WH-1042</td>
+                  <td class="product-cell__name">Centro de Distribución Norte</td>
+                  <td>Monterrey, NL</td>
+                  <td class="is-right">
+                    <span class="metric-cell__value">85%</span>
+                    <span style="font-size:11px;color:var(--color-on-surface-variant);margin-left:0.25rem;">(12k/14k)</span>
+                  </td>
+                  <td><span class="status-badge status-badge--success">Operativa</span></td>
+                  <td>Carlos Rivera</td>
+                  <td class="is-right">
+                    <div class="row-actions">
+                      <button class="row-action-btn" type="button" title="Ver detalles" data-action="view"><span class="material-symbols-outlined">visibility</span></button>
+                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
+                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-name="Bodega Satélite Sur" data-location="Guadalajara, JAL" data-capacity="5000" data-manager="Ana Martínez">
+                  <td class="metric-cell__value">WH-1043</td>
+                  <td class="product-cell__name">Bodega Satélite Sur</td>
+                  <td>Guadalajara, JAL</td>
+                  <td class="is-right">
+                    <span class="metric-cell__value">92%</span>
+                    <span style="font-size:11px;color:var(--color-on-surface-variant);margin-left:0.25rem;">(4.6k/5k)</span>
+                  </td>
+                  <td><span class="status-badge status-badge--warning">Saturada</span></td>
+                  <td>Ana Martínez</td>
+                  <td class="is-right">
+                    <div class="row-actions">
+                      <button class="row-action-btn" type="button" title="Ver detalles" data-action="view"><span class="material-symbols-outlined">visibility</span></button>
+                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
+                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-name="Almacén Central R-1" data-location="Querétaro, QRO" data-capacity="20000" data-manager="Luis Garza">
+                  <td class="metric-cell__value">WH-1044</td>
+                  <td class="product-cell__name">Almacén Central R-1</td>
+                  <td>Querétaro, QRO</td>
+                  <td class="is-right">
+                    <span class="metric-cell__value">45%</span>
+                    <span style="font-size:11px;color:var(--color-on-surface-variant);margin-left:0.25rem;">(9k/20k)</span>
+                  </td>
+                  <td><span class="status-badge status-badge--success">Operativa</span></td>
+                  <td>Luis Garza</td>
+                  <td class="is-right">
+                    <div class="row-actions">
+                      <button class="row-action-btn" type="button" title="Ver detalles" data-action="view"><span class="material-symbols-outlined">visibility</span></button>
+                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
+                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-name="Depósito Frío T2" data-location="CDMX" data-capacity="8000" data-manager="Sofía Vega">
+                  <td class="metric-cell__value">WH-1045</td>
+                  <td class="product-cell__name">Depósito Frío T2</td>
+                  <td>CDMX</td>
+                  <td class="is-right">
+                    <span class="metric-cell__value">--</span>
+                    <span style="font-size:11px;color:var(--color-on-surface-variant);margin-left:0.25rem;">(0/8k)</span>
+                  </td>
+                  <td><span class="status-badge status-badge--danger">Mantenimiento</span></td>
+                  <td>Sofía Vega</td>
+                  <td class="is-right">
+                    <div class="row-actions">
+                      <button class="row-action-btn" type="button" title="Ver detalles" data-action="view"><span class="material-symbols-outlined">visibility</span></button>
+                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
+                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <span class="pagination__info">Mostrando 1 a 4 de 24 registros</span>
+            <div class="pagination__controls">
+              <button class="pagination__btn" type="button" disabled aria-label="Página anterior">
+                <span class="material-symbols-outlined icon-sm">chevron_left</span>
+              </button>
+              <button class="pagination__btn is-active" type="button" data-page="1">1</button>
+              <button class="pagination__btn" type="button" data-page="2">2</button>
+              <button class="pagination__btn" type="button" data-page="3">3</button>
+              <span class="pagination__ellipsis">…</span>
+              <button class="pagination__btn" type="button" aria-label="Página siguiente">
+                <span class="material-symbols-outlined icon-sm">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Nav inferior (solo móvil) -->
+  <nav class="mobile-nav">
+    <a class="mobile-nav__link" href="../index.html">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="mobile-nav__label">Dashboard</span>
+    </a>
+    <a class="mobile-nav__link is-active" href="#">
+      <span class="material-symbols-outlined is-filled">inventory_2</span>
+      <span class="mobile-nav__label">Bodegas</span>
+    </a>
+    <a class="mobile-nav__link" href="#">
+      <span class="material-symbols-outlined">package_2</span>
+      <span class="mobile-nav__label">Productos</span>
+    </a>
+    <a class="mobile-nav__link" href="#">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      <span class="mobile-nav__label">Movimientos</span>
+    </a>
+  </nav>
+
+  <div class="mobile-overlay"></div>
+</div>
+
+<!-- Modal: Crear / Editar Bodega -->
+<div class="modal-backdrop" id="bodega-modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bodega-modal-title">
+    <div class="modal__header">
+      <h2 class="modal__title" id="bodega-modal-title">Crear Nueva Bodega</h2>
+      <button class="modal__close" type="button" aria-label="Cerrar" data-modal-dismiss>
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <form class="modal__body" id="bodega-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="bodega-nombre">Nombre de la bodega</label>
+        <input class="form-input" id="bodega-nombre" name="nombre" type="text" placeholder="Ej. Bodega Central" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="bodega-ubicacion">Ubicación</label>
+        <input class="form-input" id="bodega-ubicacion" name="ubicacion" type="text" placeholder="Dirección o zona" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="bodega-capacidad">Capacidad (m² o unidades)</label>
+        <input class="form-input form-input--mono" id="bodega-capacidad" name="capacidad" type="number" min="0" placeholder="0" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="bodega-encargado">Encargado</label>
+        <input class="form-input" id="bodega-encargado" name="encargado" type="text" placeholder="Nombre del supervisor" required>
+      </div>
+    </form>
+
+    <div class="modal__footer">
+      <button class="toolbar-btn toolbar-btn--outline" type="button" data-modal-dismiss>Cancelar</button>
+      <button class="toolbar-btn toolbar-btn--primary" type="submit" form="bodega-form">
+        <span class="material-symbols-outlined icon-sm">save</span>
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirmar eliminación -->
+<div class="modal-backdrop" id="delete-modal-backdrop">
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-modal-title">
+    <div class="modal__header">
+      <h2 class="modal__title" id="delete-modal-title">Eliminar bodega</h2>
+      <button class="modal__close" type="button" aria-label="Cerrar" data-modal-dismiss>
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="modal__body">
+      <p class="modal__message">¿Está seguro que desea eliminar <strong id="delete-modal-name">esta bodega</strong>? Esta acción no se puede deshacer.</p>
+    </div>
+    <div class="modal__footer">
+      <button class="toolbar-btn toolbar-btn--outline" type="button" data-modal-dismiss>Cancelar</button>
+      <button class="toolbar-btn toolbar-btn--danger" type="button" id="delete-modal-confirm">
+        <span class="material-symbols-outlined icon-sm">delete</span>
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/script.js"></script>
+</body>
+</html>

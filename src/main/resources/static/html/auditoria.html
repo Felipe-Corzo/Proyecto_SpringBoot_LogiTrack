@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoría de Cambios - LogiTrack</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
+
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar__header">
+      <div class="sidebar__logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 2L21 7V17L12 22L3 17V7L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M3 7L12 12L21 7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="sidebar__title">LogiTrack</h1>
+        <span class="sidebar__subtitle">Warehouse Management</span>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <a class="sidebar__link" href="dashboard.html">
+        <span class="material-symbols-outlined icon-lg">dashboard</span>
+        Dashboard
+      </a>
+      <a class="sidebar__link" href="bodegas.html">
+        <span class="material-symbols-outlined icon-lg">inventory_2</span>
+        Bodegas
+      </a>
+      <a class="sidebar__link" href="productos.html">
+        <span class="material-symbols-outlined icon-lg">package_2</span>
+        Productos
+      </a>
+      <a class="sidebar__link" href="movimientos.html">
+        <span class="material-symbols-outlined icon-lg">swap_horiz</span>
+        Movimientos
+      </a>
+      <a class="sidebar__link is-active" href="auditoria.html">
+        <span class="material-symbols-outlined is-filled icon-lg">history_edu</span>
+        Auditoría
+      </a>
+    </nav>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu-btn" id="mobile-menu-btn" type="button" aria-label="Abrir menú">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div class="search-field">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" placeholder="Buscar en auditoría...">
+        </div>
+      </div>
+      <div class="topbar__right">
+        <button class="icon-btn" type="button" title="Notificaciones">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <div class="topbar__divider"></div>
+        <div class="avatar" title="Admin User">AD</div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="content__inner">
+
+        <div class="page-toolbar" data-animate style="animation-delay:0ms">
+          <div>
+            <h2 class="content__title text-display">Auditoría de Cambios</h2>
+            <p class="content__subtitle">Registro detallado de operaciones (Solo Administradores)</p>
+          </div>
+          <button class="toolbar-btn toolbar-btn--outline" type="button" id="btn-export-csv">
+            <span class="material-symbols-outlined icon-sm">download</span>
+            Exportar CSV
+          </button>
+        </div>
+
+        <div class="filters-bar form-grid-4" data-animate style="animation-delay:70ms">
+          <div class="form-group">
+            <label class="form-label">Rango de Fechas</label>
+            <div class="input-prefix">
+              <span class="material-symbols-outlined input-prefix__icon">calendar_month</span>
+              <input class="form-input" type="text" placeholder="Últimos 7 días">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Usuario</label>
+            <div class="select-wrapper">
+              <span class="material-symbols-outlined select-icon-left">person</span>
+              <select class="form-select has-icon-left">
+                <option value="">Todos los usuarios</option>
+                <option value="admin">admin@logitrac.com</option>
+                <option value="jdoe">j.doe@logitrac.com</option>
+              </select>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo de Operación</label>
+            <div class="select-wrapper">
+              <span class="material-symbols-outlined select-icon-left">swap_vert</span>
+              <select class="form-select has-icon-left">
+                <option value="">Todas (INS/UPD/DEL)</option>
+                <option value="INSERT">INSERT</option>
+                <option value="UPDATE">UPDATE</option>
+                <option value="DELETE">DELETE</option>
+              </select>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Entidad</label>
+            <div class="select-wrapper">
+              <span class="material-symbols-outlined select-icon-left">dataset</span>
+              <select class="form-select has-icon-left">
+                <option value="">Todas las entidades</option>
+                <option value="Bodega">Bodega</option>
+                <option value="Producto">Producto</option>
+                <option value="Movimiento">Movimiento</option>
+              </select>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card" data-animate style="animation-delay:140ms">
+          <div class="table-card__header flex-between">
+            <h3 class="panel__title">Registros (425)</h3>
+            <div class="row-actions" style="opacity: 1;">
+              <button class="row-action-btn" type="button" title="Actualizar"><span class="material-symbols-outlined">refresh</span></button>
+              <button class="row-action-btn" type="button" title="Filtrar"><span class="material-symbols-outlined">filter_list</span></button>
+            </div>
+          </div>
+
+          <div class="table-card__scroll">
+            <table class="data-table" id="audit-table">
+              <thead>
+                <tr>
+                  <th>Operación</th>
+                  <th>Fecha y Hora</th>
+                  <th>Usuario</th>
+                  <th>Entidad Afectada</th>
+                  <th class="is-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="status-badge status-badge--insert">INSERT</span></td>
+                  <td class="cell-mono">2023-10-27 14:32:01</td>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar avatar--sm">JD</div>
+                      <span>j.doe@logitrac.com</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="entity-cell">
+                      <span class="entity-cell__title">Producto</span>
+                      <span class="entity-cell__subtitle">ID: PRD-9921 (Laptop Pro)</span>
+                    </div>
+                  </td>
+                  <td class="is-right">
+                    <button class="row-action-btn" type="button" data-action="view" title="Ver detalle">
+                      <span class="material-symbols-outlined">visibility</span>
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="status-badge status-badge--update">UPDATE</span></td>
+                  <td class="cell-mono">2023-10-27 13:15:44</td>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar avatar--sm">AS</div>
+                      <span>a.smith@logitrac.com</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="entity-cell">
+                      <span class="entity-cell__title">Movimiento</span>
+                      <span class="entity-cell__subtitle">ID: MOV-4042 (Status: Pending -&gt; Shipped)</span>
+                    </div>
+                  </td>
+                  <td class="is-right">
+                    <button class="row-action-btn" type="button" data-action="view" title="Ver detalle">
+                      <span class="material-symbols-outlined">visibility</span>
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="status-badge status-badge--delete">DELETE</span></td>
+                  <td class="cell-mono">2023-10-27 11:05:12</td>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar avatar--sm bg-danger">AD</div>
+                      <span>sys_admin (API)</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="entity-cell">
+                      <span class="entity-cell__title">Bodega</span>
+                      <span class="entity-cell__subtitle">ID: WH-B (Zona Norte - Obsoleta)</span>
+                    </div>
+                  </td>
+                  <td class="is-right">
+                    <button class="row-action-btn" type="button" data-action="view" title="Ver detalle">
+                      <span class="material-symbols-outlined">visibility</span>
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="status-badge status-badge--update">UPDATE</span></td>
+                  <td class="cell-mono">2023-10-27 09:40:18</td>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar avatar--sm">MB</div>
+                      <span>m.brown@logitrac.com</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="entity-cell">
+                      <span class="entity-cell__title">Producto</span>
+                      <span class="entity-cell__subtitle">ID: PRD-1102 (Stock adjustment: +50)</span>
+                    </div>
+                  </td>
+                  <td class="is-right">
+                    <button class="row-action-btn" type="button" data-action="view" title="Ver detalle">
+                      <span class="material-symbols-outlined">visibility</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <span class="pagination__info">Mostrando 1 a 4 de 425 registros</span>
+            <div class="pagination__controls">
+              <button class="pagination__btn" type="button" disabled>Ant</button>
+              <button class="pagination__btn is-active" type="button">1</button>
+              <button class="pagination__btn" type="button">2</button>
+              <button class="pagination__btn" type="button">3</button>
+              <span class="pagination__ellipsis">…</span>
+              <button class="pagination__btn" type="button">Sig</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <nav class="mobile-nav">
+    <a class="mobile-nav__link" href="dashboard.html">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="mobile-nav__label">Dashboard</span>
+    </a>
+    <a class="mobile-nav__link" href="bodegas.html">
+      <span class="material-symbols-outlined">inventory_2</span>
+      <span class="mobile-nav__label">Bodegas</span>
+    </a>
+    <a class="mobile-nav__link" href="productos.html">
+      <span class="material-symbols-outlined">package_2</span>
+      <span class="mobile-nav__label">Productos</span>
+    </a>
+    <a class="mobile-nav__link" href="movimientos.html">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      <span class="mobile-nav__label">Movimientos</span>
+    </a>
+    <a class="mobile-nav__link is-active" href="auditoria.html">
+      <span class="material-symbols-outlined is-filled">history_edu</span>
+      <span class="mobile-nav__label">Auditoría</span>
+    </a>
+  </nav>
+
+  <div class="mobile-overlay"></div>
+</div>
+
+<div class="modal-backdrop" id="audit-modal-backdrop">
+  <div class="modal modal--lg" role="dialog" aria-modal="true" aria-labelledby="audit-modal-title">
+    <div class="modal__header">
+      <div>
+        <h2 class="modal__title" id="audit-modal-title">Detalle de Auditoría</h2>
+        <p class="content__subtitle mt-1">ID: INV-2023-08-4592 • Usuario: admin@logitrak.co</p>
+      </div>
+      <button class="modal__close" type="button" aria-label="Cerrar" data-modal-dismiss>
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="modal__body">
+      <div class="info-badges-group">
+        <div class="info-badge">
+          <span class="material-symbols-outlined icon-sm">schedule</span>
+          Oct 24, 2023 14:32:01 UTC
+        </div>
+        <div class="info-badge info-badge--accent">
+          <span class="material-symbols-outlined icon-sm">build</span>
+          Acción: UPDATE_INVENTORY
+        </div>
+      </div>
+
+      <div class="diff-grid">
+        <div class="diff-panel">
+          <div class="diff-panel__header">Valores anteriores</div>
+          <div class="diff-panel__content">
+            <table class="diff-table">
+              <tbody>
+                <tr><td>sku</td><td>WH-A-1029</td></tr>
+                <tr><td>location</td><td>Zone B, Rack 4, Bin 12</td></tr>
+                <tr class="diff-row--removed">
+                  <td>quantity</td>
+                  <td>450</td>
+                </tr>
+                <tr class="diff-row--removed">
+                  <td>status</td>
+                  <td>AVAILABLE</td>
+                </tr>
+                <tr><td>last_counted</td><td>2023-10-15T08:00:00Z</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="diff-panel">
+          <div class="diff-panel__header">Valores nuevos</div>
+          <div class="diff-panel__content">
+            <table class="diff-table">
+              <tbody>
+                <tr><td>sku</td><td>WH-A-1029</td></tr>
+                <tr><td>location</td><td>Zone B, Rack 4, Bin 12</td></tr>
+                <tr class="diff-row--added">
+                  <td>quantity</td>
+                  <td>425</td>
+                </tr>
+                <tr class="diff-row--added">
+                  <td>status</td>
+                  <td>LOW_STOCK</td>
+                </tr>
+                <tr><td>last_counted</td><td>2023-10-15T08:00:00Z</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group mt-4">
+        <label class="form-label">Razón de Auditoría / Notas</label>
+        <div class="read-only-box">
+          Ajuste manual tras discrepancia de conteo cíclico reportada por Operador JD. Se encontraron 25 unidades dañadas durante el tránsito, movidas a cuarentena.
+        </div>
+      </div>
+    </div>
+
+    <div class="modal__footer">
+      <button class="toolbar-btn toolbar-btn--outline" type="button" data-modal-dismiss>Revertir Cambios</button>
+      <button class="toolbar-btn toolbar-btn--primary" type="button" data-modal-dismiss>
+        Reconocer
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/script.js"></script>
+</body>
+</html>
