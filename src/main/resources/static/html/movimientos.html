@@ -85,20 +85,20 @@
         <div class="filters-bar form-grid-4" data-animate style="animation-delay:70ms">
           <div class="form-group">
             <label class="form-label text-uppercase">Fecha (Desde)</label>
-            <input class="form-input" type="date">
+            <input class="form-input" id="mov-fecha-desde" type="date">
           </div>
           <div class="form-group">
             <label class="form-label text-uppercase">Fecha (Hasta)</label>
-            <input class="form-input" type="date">
+            <input class="form-input" id="mov-fecha-hasta" type="date">
           </div>
           <div class="form-group">
             <label class="form-label text-uppercase">Tipo de Movimiento</label>
             <div class="select-wrapper">
-              <select class="form-select">
-                <option>Todos</option>
-                <option>ENTRADA</option>
-                <option>SALIDA</option>
-                <option>TRANSFERENCIA</option>
+              <select class="form-select" id="mov-tipo">
+                <option value="">Todos</option>
+                <option value="ENTRADA">ENTRADA</option>
+                <option value="SALIDA">SALIDA</option>
+                <option value="TRANSFERENCIA">TRANSFERENCIA</option>
               </select>
               <span class="material-symbols-outlined">expand_more</span>
             </div>
@@ -106,10 +106,8 @@
           <div class="form-group">
             <label class="form-label text-uppercase">Bodega</label>
             <div class="select-wrapper">
-              <select class="form-select">
-                <option>Todas las Bodegas</option>
-                <option>Bodega Central (BOG-01)</option>
-                <option>Centro Distribución Norte (MED-02)</option>
+              <select class="form-select" id="mov-bodega">
+                <option value="">Todas las Bodegas</option>
               </select>
               <span class="material-symbols-outlined">expand_more</span>
             </div>
@@ -130,7 +128,7 @@
                   <th class="is-center">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="movimientos-tbody">
                 <tr>
                   <td class="cell-muted">24 Oct 2023 14:30</td>
                   <td><span class="status-badge status-badge--success">ENTRADA</span></td>

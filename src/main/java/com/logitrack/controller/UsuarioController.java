@@ -2,7 +2,10 @@ package com.logitrack.controller;
 
 import com.logitrack.model.Usuario;
 import com.logitrack.repository.UsuarioRepository;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -16,9 +19,8 @@ public class UsuarioController {
         this.usuarioRepository = usuarioRepository;
     }
 
-    // Gracias al @JsonIgnore en Usuario.password (seccion 3.1), esto ya es seguro exponerlo.
     @GetMapping
-    public List<Usuario> listar() {
-        return usuarioRepository.findAll();
+    public ResponseEntity<List<Usuario>> obtenerTodos() {
+        return ResponseEntity.ok(usuarioRepository.findAll());
     }
 }

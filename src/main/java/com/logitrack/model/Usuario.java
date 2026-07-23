@@ -1,14 +1,12 @@
 package com.logitrack.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-
-import java.time.LocalDateTime;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "usuarios")
@@ -23,36 +21,24 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Size(min = 3, max = 50)
+    @NotBlank(message = "El nombre de usuario es obligatorio")
+    @Size(min = 3, max = 50, message = "El usuario debe tener entre 3 y 50 caracteres")
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    
-    @NotBlank
-    @Column(nullable = false)
-    @JsonIgnore
-    private String password;
-
-    @NotBlank
-    @Email
+    @NotBlank(message = "El correo electrónico es obligatorio")
+    @Email(message = "Debe proporcionar un correo electrónico válido")
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @NotBlank(message = "La contraseña es obligatoria")
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(nullable = false)
+    private String password;
+
+    @NotNull(message = "El rol es obligatorio")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    @Builder.Default
-    private RolUsuario rol = RolUsuario.EMPLEADO;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean activo = true;
-
-    @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
-
-    @PrePersist
-    protected void onCreate() {
-        this.fechaCreacion = LocalDateTime.now();
-    }
+    private Rol rol;
 }

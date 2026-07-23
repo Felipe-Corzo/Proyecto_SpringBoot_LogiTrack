@@ -1,11 +1,12 @@
 package com.logitrack.service;
 
+import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.Producto;
 import com.logitrack.repository.ProductoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProductoServiceImpl implements ProductoService {
@@ -22,38 +23,53 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
-    public Optional<Producto> obtenerPorId(Long id) {
-        return productoRepository.findById(id);
+    public Producto obtenerPorId(Long id) {
+        return productoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto", "id", id));
     }
 
     @Override
-    public Producto crear(Producto producto) {
-        producto.setId(null);
+    @Transactional
+    public Producto guardar(Producto producto) {
         return productoRepository.save(producto);
     }
 
     @Override
-    public Optional<Producto> actualizar(Long id, Producto datos) {
-        return productoRepository.findById(id).map(existente -> {
-            existente.setNombre(datos.getNombre());
-            existente.setCategoria(datos.getCategoria());
-            existente.setStock(datos.getStock());
-            existente.setPrecio(datos.getPrecio());
-            return productoRepository.save(existente);
-        });
+    @Transactional
+    public Producto actualizar(Long id, Producto producto) {
+        Producto productoExistente = obtenerPorId(id);
+
+        productoExistente.setNombre(producto.getNombre());
+        productoExistente.setCategoria(producto.getCategoria());
+        productoExistente.setStock(producto.getStock());
+        productoExistente.setPrecio(producto.getPrecio());
+
+        return productoRepository.save(productoExistente);
     }
 
     @Override
-    public boolean eliminar(Long id) {
-        if (!productoRepository.existsById(id)) {
-            return false;
-        }
-        productoRepository.deleteById(id);
-        return true;
+    @Transactional
+    public void eliminar(Long id) {
+        Producto producto = obtenerPorId(id);
+        productoRepository.delete(producto);
     }
 
     @Override
-    public List<Producto> obtenerConStockBajo(Integer umbral) {
-        return productoRepository.findByStockLessThan(umbral);
+    public List<Producto> buscarPorNombre(String nombre) {
+        return productoRepository.findByNombreContainingIgnoreCase(nombre);
+    }
+
+    @Override
+    public List<Producto> buscarBajoStock(Integer umbral) {
+        return productoRepository.findByStockLessThan(umbral != null ? umbral : 10);
+    }
+
+    @Override
+    public List<Producto> filtrarProductos(String nombre, String categoria, Boolean bajoStock) {
+        return productoRepository.filtrarProductos(
+                (nombre != null && !nombre.isBlank()) ? nombre : null,
+                (categoria != null && !categoria.isBlank()) ? categoria : null,
+                bajoStock
+        );
     }
 }

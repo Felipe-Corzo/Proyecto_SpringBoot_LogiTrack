@@ -1,7 +1,6 @@
 package com.logitrack.model;
 
-import com.logitrack.audit.Auditable;
-import com.logitrack.audit.AuditListener;
+import com.logitrack.listener.AuditEntityListener;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,58 +8,36 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 @Entity
 @Table(name = "bodegas")
-@EntityListeners(AuditListener.class)
+@EntityListeners(AuditEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Bodega implements Auditable {
+public class Bodega {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "El nombre de la bodega es obligatorio")
+    @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @NotBlank
-    @Size(max = 150)
+    @NotBlank(message = "La ubicación es obligatoria")
+    @Size(min = 2, max = 150, message = "La ubicación debe tener entre 2 y 150 caracteres")
     @Column(nullable = false, length = 150)
     private String ubicacion;
 
-    @NotNull
-    @Min(1)
+    @NotNull(message = "La capacidad es obligatoria")
+    @Min(value = 1, message = "La capacidad debe ser mayor a 0")
     @Column(nullable = false)
     private Integer capacidad;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "encargado_id")
     private Usuario encargado;
-
-    // --- Soporte para auditoria automatica (no se persiste) ---
-    @Transient
-    private String auditSnapshot;
-
-    @Override
-    public Map<String, Object> auditFields() {
-        Map<String, Object> campos = new LinkedHashMap<>();
-        campos.put("nombre", nombre);
-        campos.put("ubicacion", ubicacion);
-        campos.put("capacidad", capacidad);
-        campos.put("encargadoId", encargado != null ? encargado.getId() : null);
-        return campos;
-    }
-
-    @Override
-    public Object getAuditId() {
-        return id;
-    }
 }

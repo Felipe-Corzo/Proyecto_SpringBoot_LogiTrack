@@ -1,18 +1,14 @@
 package com.logitrack.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
-/**
- * Registro de auditoria. En el paso de "Auditoria automatica" la vamos
- * a poblar desde un EntityListener (@PrePersist/@PreUpdate/@PreRemove)
- * en las entidades que queramos auditar, no manualmente.
- */
 @Entity
-@Table(name = "auditoria")
+@Table(name = "auditorias")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,7 +20,6 @@ public class Auditoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_operacion", nullable = false, length = 20)
     private TipoOperacion tipoOperacion;
@@ -32,27 +27,26 @@ public class Auditoria {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
-    @NotNull
-    @Column(name = "entidad_afectada", nullable = false, length = 100)
+    @Column(name = "entidad_afectada", nullable = false, length = 50)
     private String entidadAfectada;
 
-    @Column(name = "entidad_id", length = 50)
-    private String entidadId;
+    @Column(name = "entidad_id")
+    private Long entidadId;
 
-    @Lob
-    @Column(name = "valores_anteriores")
+    @Column(name = "valores_anteriores", columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     private String valoresAnteriores;
 
-    @Lob
-    @Column(name = "valores_nuevos")
+    @Column(name = "valores_nuevos", columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     private String valoresNuevos;
 
     @PrePersist
-    protected void onCreate() {
+    public void prePersist() {
         if (this.fechaHora == null) {
             this.fechaHora = LocalDateTime.now();
         }

@@ -16,7 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
   initLoginPage();
   initDashboardWidgets();
   initModalDismissButtons();
+  initGlobalHeaderEvents();
 });
+
+function initGlobalHeaderEvents() {
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.logout-btn')) {
+      cerrarSesion();
+    }
+  });
+
+  if (typeof getUsuarioActual === 'function') {
+    const u = getUsuarioActual();
+    if (u && u.username) {
+      const initials = u.username.slice(0, 2).toUpperCase();
+      document.querySelectorAll('.avatar').forEach((el) => {
+        el.textContent = initials;
+        el.title = `${u.username} (${u.rol || 'USUARIO'})`;
+      });
+    }
+  }
+}
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -295,78 +315,123 @@ function initDashboardWidgets() {
 /* ============================================================================
    Bodegas (listado + modal crear/editar + modal eliminar + búsqueda)
    ============================================================================ */
-   async function cargarBodegas() {
-    const tbody = document.getElementById('bodegas-tbody');
-    if (!tbody) return;
-    protegerRuta();
-  
-    try {
-      const bodegas = await apiFetch('/api/bodegas');
-      tbody.innerHTML = bodegas.map((b) => `
-        <tr data-id="${b.id}" data-name="${b.nombre}" data-location="${b.ubicacion}"
-            data-capacity="${b.capacidad}" data-encargado-id="${b.encargado?.id ?? ''}">
-          <td class="metric-cell__value">BOD-${b.id}</td>
-          <td class="product-cell__name">${b.nombre}</td>
-          <td>${b.ubicacion}</td>
-          <td class="is-right"><span class="metric-cell__value">${b.capacidad}</span></td>
-          <td><span class="status-badge status-badge--success">Operativa</span></td>
-          <td>${b.encargado?.username ?? 'Sin asignar'}</td>
-          <td class="is-right">
-            <div class="row-actions">
-              <button class="row-action-btn" type="button" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-              <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-            </div>
-          </td>
-        </tr>`).join('');
-  
-      adjuntarEventosFilasBodega();
-    } catch (err) {
-      console.error('Error cargando bodegas:', err);
-    }
+let todasLasBodegas = [];
+
+async function cargarBodegas() {
+  const tbody = document.getElementById('bodegas-tbody');
+  if (!tbody) return;
+  protegerRuta();
+
+  try {
+    todasLasBodegas = await apiFetch('/api/bodegas');
+    renderBodegas(todasLasBodegas);
+    initBusquedaBodegas();
+  } catch (err) {
+    console.error('Error cargando bodegas:', err);
   }
-  
-  async function cargarEncargados() {
-    const select = document.getElementById('bodega-encargado');
-    if (!select) return;
+}
+
+function renderBodegas(bodegas) {
+  const tbody = document.getElementById('bodegas-tbody');
+  if (!tbody) return;
+
+  if (bodegas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="is-center cell-muted" style="padding: 2rem;">No se encontraron bodegas.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = bodegas.map((b) => `
+    <tr data-id="${b.id}" data-name="${b.nombre}" data-location="${b.ubicacion}"
+        data-capacity="${b.capacidad}" data-encargado-id="${b.encargado?.id ?? ''}">
+      <td class="metric-cell__value">BOD-${b.id}</td>
+      <td class="product-cell__name">${b.nombre}</td>
+      <td>${b.ubicacion}</td>
+      <td class="is-right"><span class="metric-cell__value">${b.capacidad}</span></td>
+      <td><span class="status-badge status-badge--success">Operativa</span></td>
+      <td>${b.encargado?.username ?? 'Sin asignar'}</td>
+      <td class="is-right">
+        <div class="row-actions">
+          <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
+          <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  adjuntarEventosFilasBodega();
+}
+
+function initBusquedaBodegas() {
+  const inputs = document.querySelectorAll('#bodega-search, #bodega-search-desktop, #bodega-search-mobile');
+  inputs.forEach((input) => {
+    input.addEventListener('input', () => {
+      const q = input.value.toLowerCase().trim();
+      const filtradas = todasLasBodegas.filter((b) => {
+        const idStr = `bod-${b.id}`.toLowerCase();
+        const nom = (b.nombre || '').toLowerCase();
+        const ubi = (b.ubicacion || '').toLowerCase();
+        const enc = (b.encargado?.username || '').toLowerCase();
+        return idStr.includes(q) || nom.includes(q) || ubi.includes(q) || enc.includes(q);
+      });
+      renderBodegas(filtradas);
+    });
+  });
+}
+
+async function cargarEncargados() {
+  const select = document.getElementById('bodega-encargado');
+  if (!select) return;
+  try {
     const usuarios = await apiFetch('/api/usuarios');
     select.innerHTML = '<option value="" disabled selected>Selecciona un encargado...</option>' +
       usuarios.map((u) => `<option value="${u.id}">${u.username}</option>`).join('');
+  } catch (err) {
+    console.error('Error cargando encargados:', err);
   }
-  
-  function adjuntarEventosFilasBodega() {
-    document.querySelectorAll('#bodegas-tbody [data-action="edit"]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const row = btn.closest('tr');
-        abrirModalBodega('edit', row.dataset);
-      });
+}
+
+function adjuntarEventosFilasBodega() {
+  document.querySelectorAll('#bodegas-tbody [data-action="edit"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr');
+      abrirModalBodega('edit', row.dataset);
     });
-    document.querySelectorAll('#bodegas-tbody [data-action="delete"]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const row = btn.closest('tr');
-        if (!confirm(`¿Eliminar la bodega "${row.dataset.name}"?`)) return;
+  });
+  document.querySelectorAll('#bodegas-tbody [data-action="delete"]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('tr');
+      if (!confirm(`¿Eliminar la bodega "${row.dataset.name}"?`)) return;
+      try {
         await apiFetch(`/api/bodegas/${row.dataset.id}`, { method: 'DELETE' });
         row.remove();
-      });
+        todasLasBodegas = todasLasBodegas.filter((b) => b.id != row.dataset.id);
+      } catch (err) {
+        alert(err.message);
+      }
     });
-  }
-  
-  let bodegaIdEditando = null;
-  
-  function abrirModalBodega(mode, data) {
-    bodegaIdEditando = mode === 'edit' ? data.id : null;
-    const form = document.getElementById('bodega-form');
-    form.reset();
-    if (data) {
-      form.elements.nombre.value = data.name || '';
-      form.elements.ubicacion.value = data.location || '';
-      form.elements.capacidad.value = data.capacity || '';
-      if (data.encargadoId) form.elements.encargado.value = data.encargadoId;
-    }
-    document.getElementById('bodega-modal-backdrop').classList.add('is-open');
-  }
+  });
+}
 
-  function abrirProductoModal(mode, data) {
+let bodegaIdEditando = null;
+
+function abrirModalBodega(mode, data) {
+  bodegaIdEditando = mode === 'edit' ? data.id : null;
+  const form = document.getElementById('bodega-form');
+  if (!form) return;
+  form.reset();
+  document.getElementById('bodega-modal-title').textContent =
+    mode === 'edit' ? 'Editar Bodega' : 'Crear Nueva Bodega';
+  if (data) {
+    form.elements.nombre.value = data.name || '';
+    form.elements.ubicacion.value = data.location || '';
+    form.elements.capacidad.value = data.capacity || '';
+    if (data.encargadoId) form.elements.encargado.value = data.encargadoId;
+  }
+  document.getElementById('bodega-modal-backdrop')?.classList.add('is-open');
+}
+
+function abrirProductoModal(mode, data) {
   const form = document.getElementById('product-form');
+  if (!form) return;
   form.reset();
   document.getElementById('product-modal-title').textContent =
     mode === 'edit' ? 'Editar Producto' : 'Nuevo Producto';
@@ -376,371 +441,639 @@ function initDashboardWidgets() {
     form.elements.stock.value = data.stock || '';
     form.elements.precio.value = data.price || '';
   }
-  document.getElementById('product-modal-backdrop').classList.add('is-open');
+  document.getElementById('product-modal-backdrop')?.classList.add('is-open');
 }
-  
-  document.getElementById('open-create-modal-btn')?.addEventListener('click', () => {
+
+document.getElementById('open-create-modal-btn')?.addEventListener('click', () => {
   abrirModalBodega('create', null);
 });
- 
+
 document.getElementById('open-create-product-modal-btn')?.addEventListener('click', () => {
   productoIdEditando = null;
   abrirProductoModal('create', null);
 });
 
-  document.getElementById('bodega-form')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.target;
-    const payload = {
-      nombre: form.elements.nombre.value,
-      ubicacion: form.elements.ubicacion.value,
-      capacidad: Number(form.elements.capacidad.value),
-      encargado: { id: Number(form.elements.encargado.value) },
-    };
-  
-    try {
-      if (bodegaIdEditando) {
-        await apiFetch(`/api/bodegas/${bodegaIdEditando}`, { method: 'PUT', body: JSON.stringify(payload) });
-      } else {
-        await apiFetch('/api/bodegas', { method: 'POST', body: JSON.stringify(payload) });
-      }
-      document.getElementById('bodega-modal-backdrop').classList.remove('is-open');
-      cargarBodegas();
-    } catch (err) {
-      alert(err.message);
+document.getElementById('bodega-form')?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.target;
+  const payload = {
+    nombre: form.elements.nombre.value,
+    ubicacion: form.elements.ubicacion.value,
+    capacidad: Number(form.elements.capacidad.value),
+    encargado: { id: Number(form.elements.encargado.value) },
+  };
+
+  try {
+    if (bodegaIdEditando) {
+      await apiFetch(`/api/bodegas/${bodegaIdEditando}`, { method: 'PUT', body: JSON.stringify(payload) });
+    } else {
+      await apiFetch('/api/bodegas', { method: 'POST', body: JSON.stringify(payload) });
     }
-  });
-  
-  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('bodega-modal-backdrop')?.classList.remove('is-open');
     cargarBodegas();
-    cargarEncargados();
-  });
-
-  rows().forEach((row) => {
-    const editBtn = row.querySelector('[data-action="edit"]');
-    if (editBtn) {
-      editBtn.addEventListener('click', () => {
-        openBodegaModal('edit', {
-          name: row.dataset.name,
-          location: row.dataset.location,
-          capacity: row.dataset.capacity,
-          manager: row.dataset.manager,
-        });
-      });
-    }
-  });
-
-  // ---------------------------------------------------------------------
-  // Modal de confirmación para eliminar
-  // ---------------------------------------------------------------------
-  const deleteModal = document.getElementById('delete-modal-backdrop');
-  const deleteModalName = document.getElementById('delete-modal-name');
-  const deleteConfirmBtn = document.getElementById('delete-modal-confirm');
-  let rowPendingDelete = null;
-
-  rows().forEach((row) => {
-    const deleteBtn = row.querySelector('[data-action="delete"]');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', () => {
-        rowPendingDelete = row;
-        if (deleteModalName) deleteModalName.textContent = row.dataset.name || 'esta bodega';
-        if (deleteModal) deleteModal.classList.add('is-open');
-      });
-    }
-  });
-
-  function closeDeleteModal() {
-    if (deleteModal) deleteModal.classList.remove('is-open');
-    rowPendingDelete = null;
+  } catch (err) {
+    alert(err.message);
   }
+});
 
-  if (deleteModal) {
-    deleteModal.querySelectorAll('[data-modal-dismiss]').forEach((btn) => {
-      btn.addEventListener('click', closeDeleteModal);
-    });
-    deleteModal.addEventListener('click', (event) => {
-      if (event.target === deleteModal) closeDeleteModal();
-    });
-  }
-
-  if (deleteConfirmBtn) {
-    deleteConfirmBtn.addEventListener('click', () => {
-      if (!rowPendingDelete) {
-        closeDeleteModal();
-        return;
-      }
-      const row = rowPendingDelete;
-      closeDeleteModal();
-
-      // Aquí se conectaría la llamada real al backend (DELETE /bodegas/{id}).
-      if (prefersReducedMotion) {
-        row.remove();
-      } else {
-        row.classList.add('is-removing');
-        row.addEventListener('animationend', () => row.remove(), { once: true });
-      }
-    });
-  }
-
-  // ---------------------------------------------------------------------
-  // Paginación (demo visual: alterna la página activa)
-  // ---------------------------------------------------------------------
-  const pageButtons = table.closest('.table-card')?.querySelectorAll('[data-page]') || [];
-  pageButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      pageButtons.forEach((b) => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
-    });
-  });
-
+document.addEventListener('DOMContentLoaded', () => {
+  cargarBodegas();
+  cargarEncargados();
+});
 
 /* ============================================================================
    Productos (listado + filtros combinados + modal crear/editar + eliminar)
    ============================================================================ */
-   async function cargarProductos() {
-    const tbody = document.querySelector('#products-table tbody');
-    if (!tbody) return;
-    protegerRuta();
-  
-    const productos = await apiFetch('/api/productos');
-    tbody.innerHTML = productos.map((p) => `
-      <tr data-id="${p.id}" data-name="${p.nombre}" data-category="${p.categoria ?? ''}"
-          data-stock="${p.stock}" data-price="${p.precio}" class="${p.stock < 10 ? 'is-low-stock' : ''}">
-        <td class="metric-cell__value">PRD-${p.id}</td>
-        <td class="product-cell__name">${p.nombre}</td>
-        <td class="cell-muted">${p.categoria ?? '-'}</td>
-        <td class="is-right">${p.stock < 10
-          ? `<span class="stock-badge"><span class="material-symbols-outlined">warning</span>${p.stock}</span>`
-          : `<span class="metric-cell__value">${p.stock}</span>`}</td>
-        <td class="is-right"><span class="metric-cell__value">$${Number(p.precio).toFixed(2)}</span></td>
-        <td class="is-center">
-          <div class="row-actions row-actions--center">
-            <button class="row-action-btn" type="button" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-            <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-          </div>
-        </td>
-      </tr>`).join('');
-  
-    // Reutiliza tus mismos filtros de busqueda/categoria/stock-bajo que ya existen
-    // en initProductosPage(): siguen funcionando porque leen data-* de las filas.
-    adjuntarEventosFilasProducto();
+let todosLosProductos = [];
+
+async function cargarProductos() {
+  const tbody = document.querySelector('#products-table tbody');
+  if (!tbody) return;
+  protegerRuta();
+
+  // Revisar si viene ?stockBajo=true en la URL
+  const params = new URLSearchParams(window.location.search);
+  const lowStockCheckbox = document.getElementById('product-low-stock-filter');
+  if (params.get('stockBajo') === 'true' && lowStockCheckbox) {
+    lowStockCheckbox.checked = true;
   }
-  
-  function adjuntarEventosFilasProducto() {
-    document.querySelectorAll('#products-table [data-action="delete"]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const row = btn.closest('tr');
-        if (!confirm(`¿Eliminar "${row.dataset.name}"?`)) return;
+
+  try {
+    todosLosProductos = await apiFetch('/api/productos');
+    pobladorCategorias();
+    filtrarYRenderizarProductos();
+    initEventosFiltroProductos();
+  } catch (err) {
+    console.error('Error cargando productos:', err);
+  }
+}
+
+function pobladorCategorias() {
+  const categorySelect = document.getElementById('product-category-filter');
+  if (!categorySelect) return;
+
+  const categoriasUnicas = Array.from(new Set(
+    todosLosProductos.map((p) => p.categoria).filter(Boolean)
+  ));
+
+  const actualVal = categorySelect.value;
+  categorySelect.innerHTML = '<option value="">Todas las categorías</option>' +
+    categoriasUnicas.map((cat) => `<option value="${cat}">${cat}</option>`).join('');
+
+  if (actualVal) categorySelect.value = actualVal;
+}
+
+function filtrarYRenderizarProductos() {
+  const tbody = document.querySelector('#products-table tbody');
+  const emptyState = document.getElementById('products-empty-state');
+  if (!tbody) return;
+
+  const searchInputDesktop = document.getElementById('product-search-desktop');
+  const searchInputMobile = document.getElementById('product-search-mobile');
+  const categorySelect = document.getElementById('product-category-filter');
+  const lowStockCheckbox = document.getElementById('product-low-stock-filter');
+
+  const query = (searchInputDesktop?.value || searchInputMobile?.value || '').toLowerCase().trim();
+  const categoria = (categorySelect?.value || '').toLowerCase();
+  const soloStockBajo = Boolean(lowStockCheckbox?.checked);
+
+  const filtrados = todosLosProductos.filter((p) => {
+    const pIdStr = `prd-${p.id}`.toLowerCase();
+    const pNombre = (p.nombre || '').toLowerCase();
+    const pCat = (p.categoria || '').toLowerCase();
+
+    const coincideBusqueda = !query || pIdStr.includes(query) || pNombre.includes(query) || pCat.includes(query);
+    const coincideCategoria = !categoria || pCat === categoria;
+    const coincideStockBajo = !soloStockBajo || p.stock < 10;
+
+    return coincideBusqueda && coincideCategoria && coincideStockBajo;
+  });
+
+  if (filtrados.length === 0) {
+    tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+
+  tbody.innerHTML = filtrados.map((p) => `
+    <tr data-id="${p.id}" data-name="${p.nombre}" data-category="${p.categoria ?? ''}"
+        data-stock="${p.stock}" data-price="${p.precio}" class="${p.stock < 10 ? 'is-low-stock' : ''}">
+      <td class="metric-cell__value">PRD-${p.id}</td>
+      <td class="product-cell__name">${p.nombre}</td>
+      <td class="cell-muted">${p.categoria ?? '-'}</td>
+      <td class="is-right">${p.stock < 10
+        ? `<span class="stock-badge"><span class="material-symbols-outlined">warning</span>${p.stock}</span>`
+        : `<span class="metric-cell__value">${p.stock}</span>`}</td>
+      <td class="is-right"><span class="metric-cell__value">$${Number(p.precio).toFixed(2)}</span></td>
+      <td class="is-center">
+        <div class="row-actions row-actions--center">
+          <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
+          <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  adjuntarEventosFilasProducto();
+}
+
+function initEventosFiltroProductos() {
+  const searchDesktop = document.getElementById('product-search-desktop');
+  const searchMobile = document.getElementById('product-search-mobile');
+  const catSelect = document.getElementById('product-category-filter');
+  const lowStockCheck = document.getElementById('product-low-stock-filter');
+
+  const handler = () => filtrarYRenderizarProductos();
+
+  searchDesktop?.addEventListener('input', handler);
+  searchMobile?.addEventListener('input', handler);
+  catSelect?.addEventListener('change', handler);
+  lowStockCheck?.addEventListener('change', handler);
+}
+
+function adjuntarEventosFilasProducto() {
+  document.querySelectorAll('#products-table [data-action="delete"]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('tr');
+      if (!confirm(`¿Eliminar "${row.dataset.name}"?`)) return;
+      try {
         await apiFetch(`/api/productos/${row.dataset.id}`, { method: 'DELETE' });
         row.remove();
-      });
-    });
-    document.querySelectorAll('#products-table [data-action="edit"]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const row = btn.closest('tr');
-        productoIdEditando = row.dataset.id;
-        abrirProductoModal('edit', {
-          name: row.dataset.name, category: row.dataset.category,
-          stock: row.dataset.stock, price: row.dataset.price,
-        });
-      });
-    });
-  }
-  
-  let productoIdEditando = null;
-  
-  document.getElementById('product-form')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.target;
-    const payload = {
-      nombre: form.elements.nombre.value,
-      categoria: form.elements.categoria.value,
-      stock: Number(form.elements.stock.value),
-      precio: Number(form.elements.precio.value),
-    };
-    try {
-      if (productoIdEditando) {
-        await apiFetch(`/api/productos/${productoIdEditando}`, { method: 'PUT', body: JSON.stringify(payload) });
-      } else {
-        await apiFetch('/api/productos', { method: 'POST', body: JSON.stringify(payload) });
+        todosLosProductos = todosLosProductos.filter((p) => p.id != row.dataset.id);
+        filtrarYRenderizarProductos();
+      } catch (err) {
+        alert(err.message);
       }
-      document.getElementById('product-modal-backdrop').classList.remove('is-open');
-      productoIdEditando = null;
-      cargarProductos();
-    } catch (err) {
-      alert(err.message);
-    }
+    });
   });
-  
-  document.addEventListener('DOMContentLoaded', cargarProductos);
+  document.querySelectorAll('#products-table [data-action="edit"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr');
+      productoIdEditando = row.dataset.id;
+      abrirProductoModal('edit', {
+        name: row.dataset.name, category: row.dataset.category,
+        stock: row.dataset.stock, price: row.dataset.price,
+      });
+    });
+  });
+}
+
+let productoIdEditando = null;
+
+document.getElementById('product-form')?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.target;
+  const payload = {
+    nombre: form.elements.nombre.value,
+    categoria: form.elements.categoria.value,
+    stock: Number(form.elements.stock.value),
+    precio: Number(form.elements.precio.value),
+  };
+  try {
+    if (productoIdEditando) {
+      await apiFetch(`/api/productos/${productoIdEditando}`, { method: 'PUT', body: JSON.stringify(payload) });
+    } else {
+      await apiFetch('/api/productos', { method: 'POST', body: JSON.stringify(payload) });
+    }
+    document.getElementById('product-modal-backdrop')?.classList.remove('is-open');
+    productoIdEditando = null;
+    cargarProductos();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+document.addEventListener('DOMContentLoaded', cargarProductos);
 
 /* ============================================================================
-   Movimientos (Historial)
+   Movimientos (Historial + Filtros)
    ============================================================================ */
-   async function cargarMovimientos() {
-    const tbody = document.querySelector('.data-table tbody');
-    if (!tbody || document.getElementById('movement-form')) return; // evita chocar con nuevo-movimiento.html
-    protegerRuta();
-  
-    const movimientos = await apiFetch('/api/movimientos');
-    tbody.innerHTML = movimientos.map((m) => `
-      <tr>
-        <td class="cell-muted">${new Date(m.fecha).toLocaleString('es-CO')}</td>
-        <td><span class="status-badge ${badgeClasePorTipo(m.tipoMovimiento)}">${m.tipoMovimiento}</span></td>
-        <td>${m.usuario?.username ?? '-'}</td>
-        <td class="product-cell__name">${m.bodegaOrigen?.nombre ?? '-'}</td>
-        <td class="product-cell__name">${m.bodegaDestino?.nombre ?? '-'}</td>
-        <td class="is-right"><span class="metric-cell__value">${sumarCantidades(m.detalles)} un.</span></td>
-        <td class="is-center"><button class="row-action-btn" type="button"><span class="material-symbols-outlined">more_vert</span></button></td>
-      </tr>`).join('');
+let todosLosMovimientos = [];
+
+async function cargarMovimientos() {
+  const tbody = document.getElementById('movimientos-tbody');
+  if (!tbody) return;
+  protegerRuta();
+
+  try {
+    todosLosMovimientos = await apiFetch('/api/movimientos');
+    await cargarBodegasParaFiltroMovimientos();
+    filtrarYRenderizarMovimientos();
+    initEventosFiltroMovimientos();
+  } catch (err) {
+    console.error('Error cargando movimientos:', err);
   }
-  
-  function badgeClasePorTipo(tipo) {
-    return { ENTRADA: 'status-badge--success', SALIDA: 'status-badge--danger', TRANSFERENCIA: 'status-badge--info' }[tipo] || '';
+}
+
+async function cargarBodegasParaFiltroMovimientos() {
+  const select = document.getElementById('mov-bodega');
+  if (!select) return;
+
+  try {
+    const bodegas = await apiFetch('/api/bodegas');
+    select.innerHTML = '<option value="">Todas las Bodegas</option>' +
+      bodegas.map((b) => `<option value="${b.id}">${b.nombre}</option>`).join('');
+  } catch (err) {
+    console.error('Error cargando bodegas para filtro:', err);
   }
-  function sumarCantidades(detalles) {
-    return (detalles || []).reduce((acc, d) => acc + d.cantidad, 0);
-  }
-  
-  document.addEventListener('DOMContentLoaded', cargarMovimientos);
-  
-  /* ============================================================================
-     Registrar Movimiento
-     ============================================================================ */
-     async function initNuevoMovimientoReal() {
-      const form = document.getElementById('movement-form');
-      if (!form) return;
-      protegerRuta();
-    
-      // 1. Llenar selects de bodega con datos reales
-      const bodegas = await apiFetch('/api/bodegas');
-      const opciones = bodegas.map((b) => `<option value="${b.id}">${b.nombre}</option>`).join('');
-      document.getElementById('bodega-origen').innerHTML =
-        '<option value="" disabled selected>Seleccione origen...</option>' + opciones;
-      document.getElementById('bodega-destino').innerHTML =
-        '<option value="" disabled selected>Seleccione destino...</option>' + opciones;
-    
-      // 2. Guardar productos reales para usarlos al agregar filas
-      window.__productosDisponibles = await apiFetch('/api/productos');
-    
-      // 3. Mostrar el usuario logueado real (ya no "Admin LogiTrack" fijo)
-      const usuarioActual = getUsuarioActual();
-      const inputUsuario = document.getElementById('usuario');
-      if (inputUsuario && usuarioActual) inputUsuario.value = usuarioActual.username;
+}
+
+function filtrarYRenderizarMovimientos() {
+  const tbody = document.getElementById('movimientos-tbody');
+  if (!tbody) return;
+
+  const fechaDesde = document.getElementById('mov-fecha-desde')?.value;
+  const fechaHasta = document.getElementById('mov-fecha-hasta')?.value;
+  const tipo = document.getElementById('mov-tipo')?.value;
+  const bodegaId = document.getElementById('mov-bodega')?.value;
+
+  const filtrados = todosLosMovimientos.filter((m) => {
+    let coincideFecha = true;
+    if (fechaDesde) {
+      coincideFecha = coincideFecha && new Date(m.fecha) >= new Date(`${fechaDesde}T00:00:00`);
     }
-    
-    // En el listener de "Agregar producto" (btn-add-product), cambia el <select> hardcodeado por:
-    function opcionesProductosHTML() {
-      return (window.__productosDisponibles || [])
-        .map((p) => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    if (fechaHasta) {
+      coincideFecha = coincideFecha && new Date(m.fecha) <= new Date(`${fechaHasta}T23:59:59`);
     }
-    // Y en el template del <tr> que ya tienes, reemplaza las <option> fijas P1/P2/P3 por:
-    //   <option value="" disabled selected>Seleccionar producto...</option>${opcionesProductosHTML()}
-    
-    // 4. Reemplaza el submit simulado por el envio real
-    document.getElementById('movement-form')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const form = event.target;
-      if (!form.checkValidity()) { form.reportValidity(); return; }
-    
-      const filas = Array.from(document.querySelectorAll('#products-tbody tr'));
-      if (filas.length === 0) { alert('Debes agregar al menos un producto.'); return; }
-    
-      const detalles = filas.map((row) => ({
-        producto: { id: Number(row.querySelector('select').value) },
-        cantidad: Number(row.querySelector('input[type="number"]').value),
-      }));
-    
-      const usuarioActual = getUsuarioActual();
-      const tipo = document.getElementById('movement-type').value;
-    
-      const payload = {
-        tipoMovimiento: tipo,
-        usuario: { id: usuarioActual.id },
-        detalles,
-      };
-      if (tipo === 'ENTRADA' || tipo === 'TRANSFERENCIA') {
-        payload.bodegaDestino = { id: Number(document.getElementById('bodega-destino').value) };
-      }
-      if (tipo === 'SALIDA' || tipo === 'TRANSFERENCIA') {
-        payload.bodegaOrigen = { id: Number(document.getElementById('bodega-origen').value) };
-      }
-    
+
+    const coincideTipo = !tipo || m.tipoMovimiento === tipo;
+    const coincideBodega = !bodegaId ||
+      String(m.bodegaOrigen?.id) === String(bodegaId) ||
+      String(m.bodegaDestino?.id) === String(bodegaId);
+
+    return coincideFecha && coincideTipo && coincideBodega;
+  });
+
+  if (filtrados.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="is-center cell-muted" style="padding: 2rem;">No se encontraron movimientos con los filtros seleccionados.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtrados.map((m) => `
+    <tr>
+      <td class="cell-muted">${new Date(m.fecha).toLocaleString('es-CO')}</td>
+      <td><span class="status-badge ${badgeClasePorTipo(m.tipoMovimiento)}">${m.tipoMovimiento}</span></td>
+      <td>${m.usuario?.username ?? '-'}</td>
+      <td class="product-cell__name">${m.bodegaOrigen?.nombre ?? '-'}</td>
+      <td class="product-cell__name">${m.bodegaDestino?.nombre ?? '-'}</td>
+      <td class="is-right"><span class="metric-cell__value">${sumarCantidades(m.detalles)} un.</span></td>
+      <td class="is-center"><button class="row-action-btn" type="button"><span class="material-symbols-outlined">more_vert</span></button></td>
+    </tr>`).join('');
+}
+
+function initEventosFiltroMovimientos() {
+  const desde = document.getElementById('mov-fecha-desde');
+  const hasta = document.getElementById('mov-fecha-hasta');
+  const tipo = document.getElementById('mov-tipo');
+  const bodega = document.getElementById('mov-bodega');
+
+  const handler = async () => {
+    if (desde?.value && hasta?.value) {
       try {
-        await apiFetch('/api/movimientos', { method: 'POST', body: JSON.stringify(payload) });
-        alert('Movimiento guardado con exito');
-        window.location.href = 'movimientos.html';
+        const d = `${desde.value}T00:00:00`;
+        const h = `${hasta.value}T23:59:59`;
+        todosLosMovimientos = await apiFetch(`/api/movimientos/rango?desde=${d}&hasta=${h}`);
       } catch (err) {
-        alert(err.message); // ej. "Stock insuficiente de 'X' en Bodega Y. Disponible: 5, solicitado: 10"
+        console.error('Error al consultar rango de fechas:', err);
+      }
+    }
+    filtrarYRenderizarMovimientos();
+  };
+
+  desde?.addEventListener('change', handler);
+  hasta?.addEventListener('change', handler);
+  tipo?.addEventListener('change', handler);
+  bodega?.addEventListener('change', handler);
+}
+
+function badgeClasePorTipo(tipo) {
+  return { ENTRADA: 'status-badge--success', SALIDA: 'status-badge--danger', TRANSFERENCIA: 'status-badge--info' }[tipo] || '';
+}
+
+function sumarCantidades(detalles) {
+  return (detalles || []).reduce((acc, d) => acc + d.cantidad, 0);
+}
+
+document.addEventListener('DOMContentLoaded', cargarMovimientos);
+
+/* ============================================================================
+   Registrar Movimiento
+   ============================================================================ */
+async function initNuevoMovimientoReal() {
+  const form = document.getElementById('movement-form');
+  if (!form) return;
+  protegerRuta();
+
+  const inputFecha = document.getElementById('fecha');
+  if (inputFecha && !inputFecha.value) {
+    inputFecha.value = new Date().toISOString().split('T')[0];
+  }
+
+  // 1. Llenar selects de bodega con datos reales
+  try {
+    const bodegas = await apiFetch('/api/bodegas');
+    const opciones = bodegas.map((b) => `<option value="${b.id}">${b.nombre}</option>`).join('');
+    const selectOrigen = document.getElementById('bodega-origen');
+    const selectDestino = document.getElementById('bodega-destino');
+    if (selectOrigen) {
+      selectOrigen.innerHTML = '<option value="" disabled selected>Seleccione origen...</option>' + opciones;
+    }
+    if (selectDestino) {
+      selectDestino.innerHTML = '<option value="" disabled selected>Seleccione destino...</option>' + opciones;
+    }
+  } catch (err) {
+    console.error('Error cargando bodegas para movimiento:', err);
+  }
+
+  // 2. Guardar productos reales para usarlos al agregar filas
+  try {
+    window.__productosDisponibles = await apiFetch('/api/productos');
+  } catch (err) {
+    console.error('Error cargando productos para movimiento:', err);
+  }
+
+  // 3. Mostrar el usuario logueado real
+  const usuarioActual = getUsuarioActual();
+  const inputUsuario = document.getElementById('usuario');
+  if (inputUsuario && usuarioActual) inputUsuario.value = usuarioActual.username;
+
+  // 4. Conectar selector de tipo de movimiento con visualización de bodegas
+  const typeSelect = document.getElementById('movement-type');
+  const warehouseSection = document.getElementById('warehouse-section');
+  const origenContainer = document.getElementById('bodega-origen-container');
+  const destinoContainer = document.getElementById('bodega-destino-container');
+  const origenSelect = document.getElementById('bodega-origen');
+  const destinoSelect = document.getElementById('bodega-destino');
+
+  if (typeSelect) {
+    typeSelect.addEventListener('change', () => {
+      const val = typeSelect.value;
+      if (!val) {
+        if (warehouseSection) warehouseSection.classList.add('hidden');
+        return;
+      }
+      if (warehouseSection) warehouseSection.classList.remove('hidden');
+
+      if (val === 'ENTRADA') {
+        if (origenContainer) origenContainer.classList.add('hidden');
+        if (destinoContainer) destinoContainer.classList.remove('hidden');
+        if (origenSelect) origenSelect.required = false;
+        if (destinoSelect) destinoSelect.required = true;
+      } else if (val === 'SALIDA') {
+        if (origenContainer) origenContainer.classList.remove('hidden');
+        if (destinoContainer) destinoContainer.classList.add('hidden');
+        if (origenSelect) origenSelect.required = true;
+        if (destinoSelect) destinoSelect.required = false;
+      } else if (val === 'TRANSFERENCIA') {
+        if (origenContainer) origenContainer.classList.remove('hidden');
+        if (destinoContainer) destinoContainer.classList.remove('hidden');
+        if (origenSelect) origenSelect.required = true;
+        if (destinoSelect) destinoSelect.required = true;
       }
     });
-    
-    document.addEventListener('DOMContentLoaded', initNuevoMovimientoReal);
+  }
+
+  // 5. Botón agregar producto
+  const btnAdd = document.getElementById('btn-add-product');
+  const tbody = document.getElementById('products-tbody');
+  const emptyState = document.getElementById('empty-state');
+
+  if (btnAdd && tbody) {
+    btnAdd.addEventListener('click', () => {
+      if (emptyState) emptyState.classList.remove('is-visible');
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="select-wrapper">
+            <select class="form-select" required>
+              <option value="" disabled selected>Seleccionar producto...</option>
+              ${opcionesProductosHTML()}
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </td>
+        <td>
+          <input class="form-input" type="number" min="1" value="1" required style="width: 100px;">
+        </td>
+        <td class="is-center">
+          <button class="row-action-btn row-action-btn--danger btn-remove-row" type="button">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        </td>
+      `;
+
+      tr.querySelector('.btn-remove-row')?.addEventListener('click', () => {
+        tr.remove();
+        if (tbody.children.length === 0 && emptyState) {
+          emptyState.classList.add('is-visible');
+        }
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+function opcionesProductosHTML() {
+  return (window.__productosDisponibles || [])
+    .map((p) => `<option value="${p.id}">${p.nombre}</option>`).join('');
+}
+
+document.getElementById('movement-form')?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.target;
+  if (!form.checkValidity()) { form.reportValidity(); return; }
+
+  const filas = Array.from(document.querySelectorAll('#products-tbody tr'));
+  if (filas.length === 0) { alert('Debes agregar al menos un producto.'); return; }
+
+  const detalles = filas.map((row) => ({
+    producto: { id: Number(row.querySelector('select').value) },
+    cantidad: Number(row.querySelector('input[type="number"]').value),
+  }));
+
+  const usuarioActual = getUsuarioActual();
+  const tipo = document.getElementById('movement-type').value;
+
+  const payload = {
+    tipoMovimiento: tipo,
+    usuario: { id: usuarioActual.id },
+    detalles,
+  };
+  if (tipo === 'ENTRADA' || tipo === 'TRANSFERENCIA') {
+    payload.bodegaDestino = { id: Number(document.getElementById('bodega-destino').value) };
+  }
+  if (tipo === 'SALIDA' || tipo === 'TRANSFERENCIA') {
+    payload.bodegaOrigen = { id: Number(document.getElementById('bodega-origen').value) };
+  }
+
+  try {
+    await apiFetch('/api/movimientos', { method: 'POST', body: JSON.stringify(payload) });
+    alert('Movimiento guardado con éxito');
+    window.location.href = 'movimientos.html';
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+document.addEventListener('DOMContentLoaded', initNuevoMovimientoReal);
+
 /* ============================================================================
    Auditoría de Cambios
    ============================================================================ */
-   async function cargarAuditorias() {
-    const tbody = document.querySelector('#audit-table tbody');
-    if (!tbody) return;
-  
-    protegerRuta();
-    protegerRutaAdmin(); // <-- si no es ADMIN, redirige a dashboard.html antes de pedir nada
-  
-    try {
-      const auditorias = await apiFetch('/api/auditorias');
-      tbody.innerHTML = auditorias.map((a) => `
-        <tr>
-          <td><span class="status-badge ${badgeClasePorOperacion(a.tipoOperacion)}">${a.tipoOperacion}</span></td>
-          <td class="cell-mono">${new Date(a.fechaHora).toLocaleString('es-CO')}</td>
-          <td>
-            <div class="user-cell">
-              <div class="avatar avatar--sm">${(a.usuario?.username || 'SY').slice(0, 2).toUpperCase()}</div>
-              <span>${a.usuario?.username ?? 'Sistema'}</span>
+let todasLasAuditorias = [];
+
+async function cargarAuditorias() {
+  const tbody = document.querySelector('#audit-table tbody');
+  if (!tbody) return;
+
+  protegerRuta();
+  protegerRutaAdmin();
+
+  try {
+    todasLasAuditorias = await apiFetch('/api/auditorias');
+    await cargarUsuariosParaFiltroAuditoria();
+    filtrarYRenderizarAuditorias();
+    initEventosFiltroAuditoria();
+  } catch (err) {
+    console.error('Error cargando auditorías:', err);
+  }
+}
+
+async function cargarUsuariosParaFiltroAuditoria() {
+  const select = document.getElementById('audit-user-filter');
+  if (!select) return;
+
+  try {
+    const usuarios = await apiFetch('/api/usuarios');
+    select.innerHTML = '<option value="">Todos los usuarios</option>' +
+      usuarios.map((u) => `<option value="${u.id}">${u.username}</option>`).join('');
+  } catch (err) {
+    console.error('Error cargando usuarios para auditoria:', err);
+  }
+}
+
+function filtrarYRenderizarAuditorias() {
+  const tbody = document.querySelector('#audit-table tbody');
+  if (!tbody) return;
+
+  const searchInput = document.getElementById('audit-search-input')?.value.toLowerCase().trim();
+  const userId = document.getElementById('audit-user-filter')?.value;
+  const opType = document.getElementById('audit-op-filter')?.value;
+  const entityType = document.getElementById('audit-entity-filter')?.value;
+
+  const filtradas = todasLasAuditorias.filter((a) => {
+    const userStr = (a.usuario?.username || 'Sistema').toLowerCase();
+    const entityStr = (a.entidadAfectada || '').toLowerCase();
+    const coincideSearch = !searchInput || userStr.includes(searchInput) || entityStr.includes(searchInput);
+
+    const coincideUser = !userId || String(a.usuario?.id) === String(userId);
+    const coincideOp = !opType || a.tipoOperacion === opType;
+    const coincideEntity = !entityType || a.entidadAfectada === entityType;
+
+    return coincideSearch && coincideUser && coincideOp && coincideEntity;
+  });
+
+  if (filtradas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="is-center cell-muted" style="padding: 2rem;">No hay registros de auditoría que coincidan con los filtros.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtradas.map((a) => `
+    <tr>
+      <td><span class="status-badge ${badgeClasePorOperacion(a.tipoOperacion)}">${a.tipoOperacion}</span></td>
+      <td class="cell-mono">${new Date(a.fechaHora).toLocaleString('es-CO')}</td>
+      <td>
+        <div class="user-cell">
+          <div class="avatar avatar--sm">${(a.usuario?.username || 'SY').slice(0, 2).toUpperCase()}</div>
+          <span>${a.usuario?.username ?? 'Sistema'}</span>
+        </div>
+      </td>
+      <td>
+        <div class="entity-cell">
+          <span class="entity-cell__title">${a.entidadAfectada}</span>
+          <span class="entity-cell__subtitle">ID: ${a.entidadId ?? '-'}</span>
+        </div>
+      </td>
+      <td class="is-right">
+        <button class="row-action-btn" type="button" data-action="view" title="Ver detalle"
+                data-anteriores='${a.valoresAnteriores ?? ""}' data-nuevos='${a.valoresNuevos ?? ""}'>
+          <span class="material-symbols-outlined">visibility</span>
+        </button>
+      </td>
+    </tr>`).join('');
+
+  document.querySelectorAll('#audit-table [data-action="view"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const body = document.querySelector('#audit-modal-backdrop .modal__body');
+      if (body) {
+        body.innerHTML = `
+          <div class="diff-grid">
+            <div class="diff-panel">
+              <div class="diff-panel__header">Valores anteriores</div>
+              <div class="diff-panel__content"><pre>${formatearJson(btn.dataset.anteriores)}</pre></div>
             </div>
-          </td>
-          <td>
-            <div class="entity-cell">
-              <span class="entity-cell__title">${a.entidadAfectada}</span>
-              <span class="entity-cell__subtitle">ID: ${a.entidadId ?? '-'}</span>
+            <div class="diff-panel">
+              <div class="diff-panel__header">Valores nuevos</div>
+              <div class="diff-panel__content"><pre>${formatearJson(btn.dataset.nuevos)}</pre></div>
             </div>
-          </td>
-          <td class="is-right">
-            <button class="row-action-btn" type="button" data-action="view"
-                    data-anteriores='${a.valoresAnteriores ?? ""}' data-nuevos='${a.valoresNuevos ?? ""}'>
-              <span class="material-symbols-outlined">visibility</span>
-            </button>
-          </td>
-        </tr>`).join('');
-  
-      // Al abrir el modal, en vez del ejemplo fijo, mete el JSON real en <pre>
-      document.querySelectorAll('[data-action="view"]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const body = document.querySelector('#audit-modal-backdrop .modal__body');
-          body.innerHTML = `
-            <div class="diff-grid">
-              <div class="diff-panel">
-                <div class="diff-panel__header">Valores anteriores</div>
-                <div class="diff-panel__content"><pre>${formatearJson(btn.dataset.anteriores)}</pre></div>
-              </div>
-              <div class="diff-panel">
-                <div class="diff-panel__header">Valores nuevos</div>
-                <div class="diff-panel__content"><pre>${formatearJson(btn.dataset.nuevos)}</pre></div>
-              </div>
-            </div>`;
-          document.getElementById('audit-modal-backdrop').classList.add('is-open');
-        });
-      });
-    } catch (err) {
-      // Si por alguna razon llega aqui sin ser ADMIN, la API ya devolvio 403
-      console.error(err);
+          </div>`;
+      }
+      document.getElementById('audit-modal-backdrop')?.classList.add('is-open');
+    });
+  });
+}
+
+function initEventosFiltroAuditoria() {
+  const searchInput = document.getElementById('audit-search-input');
+  const userSelect = document.getElementById('audit-user-filter');
+  const opSelect = document.getElementById('audit-op-filter');
+  const entitySelect = document.getElementById('audit-entity-filter');
+  const exportBtn = document.getElementById('btn-export-csv');
+
+  const handler = () => filtrarYRenderizarAuditorias();
+
+  searchInput?.addEventListener('input', handler);
+  userSelect?.addEventListener('change', handler);
+  opSelect?.addEventListener('change', handler);
+  entitySelect?.addEventListener('change', handler);
+
+  exportBtn?.addEventListener('click', () => {
+    if (todasLasAuditorias.length === 0) {
+      alert('No hay datos para exportar.');
+      return;
     }
-  }
-  
-  function badgeClasePorOperacion(tipo) {
-    return { INSERT: 'status-badge--insert', UPDATE: 'status-badge--update', DELETE: 'status-badge--delete' }[tipo] || '';
-  }
-  function formatearJson(raw) {
-    try { return JSON.stringify(JSON.parse(raw), null, 2); } catch { return raw || '(vacio)'; }
-  }
-  
-  document.addEventListener('DOMContentLoaded', cargarAuditorias);
+    const headers = ['ID', 'Operación', 'FechaHora', 'Usuario', 'Entidad', 'EntidadID'];
+    const rows = todasLasAuditorias.map((a) => [
+      a.id,
+      a.tipoOperacion,
+      a.fechaHora,
+      a.usuario?.username || 'Sistema',
+      a.entidadAfectada,
+      a.entidadId || ''
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `auditoria_logitrack_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+}
+
+function badgeClasePorOperacion(tipo) {
+  return { INSERT: 'status-badge--insert', UPDATE: 'status-badge--update', DELETE: 'status-badge--delete' }[tipo] || '';
+}
+
+function formatearJson(raw) {
+  try { return JSON.stringify(JSON.parse(raw), null, 2); } catch { return raw || '(vacio)'; }
+}
+
+document.addEventListener('DOMContentLoaded', cargarAuditorias);

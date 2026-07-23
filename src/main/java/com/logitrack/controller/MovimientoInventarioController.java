@@ -1,9 +1,11 @@
 package com.logitrack.controller;
 
 import com.logitrack.model.MovimientoInventario;
+import com.logitrack.model.TipoMovimiento;
 import com.logitrack.service.MovimientoInventarioService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,29 +23,34 @@ public class MovimientoInventarioController {
     }
 
     @GetMapping
-    public List<MovimientoInventario> listar() {
-        return movimientoService.obtenerTodos();
+    public ResponseEntity<List<MovimientoInventario>> obtenerTodos() {
+        return ResponseEntity.ok(movimientoService.obtenerTodos());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MovimientoInventario> obtenerPorId(@PathVariable Long id) {
-        return movimientoService.obtenerPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(movimientoService.obtenerPorId(id));
+    }
+
+    @GetMapping("/tipo/{tipo}")
+    public ResponseEntity<List<MovimientoInventario>> buscarPorTipo(@PathVariable TipoMovimiento tipo) {
+        return ResponseEntity.ok(movimientoService.buscarPorTipo(tipo));
+    }
+
+    @GetMapping("/rango")
+    public ResponseEntity<List<MovimientoInventario>> buscarPorRangoFechas(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta) {
+        return ResponseEntity.ok(movimientoService.buscarPorRangoFechas(desde, hasta));
+    }
+
+    @GetMapping("/bodega/{bodegaId}")
+    public ResponseEntity<List<MovimientoInventario>> buscarPorBodega(@PathVariable Long bodegaId) {
+        return ResponseEntity.ok(movimientoService.buscarPorBodega(bodegaId));
     }
 
     @PostMapping
-    public ResponseEntity<MovimientoInventario> crear(@Valid @RequestBody MovimientoInventario movimiento) {
-        MovimientoInventario creado = movimientoService.crear(movimiento);
-        return ResponseEntity.status(201).body(creado);
-    }
-
-    // Adelanto del paso 7: consulta por rango de fechas (BETWEEN)
-    // Ejemplo: /api/movimientos/rango?desde=2026-07-01T00:00:00&hasta=2026-07-31T23:59:59
-    @GetMapping("/rango")
-    public List<MovimientoInventario> obtenerPorRango(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta) {
-        return movimientoService.obtenerPorRangoFechas(desde, hasta);
+    public ResponseEntity<MovimientoInventario> registrar(@Valid @RequestBody MovimientoInventario movimiento) {
+        return new ResponseEntity<>(movimientoService.registrarMovimiento(movimiento), HttpStatus.CREATED);
     }
 }

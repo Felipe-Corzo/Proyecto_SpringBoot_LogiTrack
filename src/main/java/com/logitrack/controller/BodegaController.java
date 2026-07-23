@@ -3,7 +3,9 @@ package com.logitrack.controller;
 import com.logitrack.model.Bodega;
 import com.logitrack.service.BodegaService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,34 +21,34 @@ public class BodegaController {
     }
 
     @GetMapping
-    public List<Bodega> listar() {
-        return bodegaService.obtenerTodas();
+    public ResponseEntity<List<Bodega>> obtenerTodas() {
+        return ResponseEntity.ok(bodegaService.obtenerTodas());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Bodega> obtenerPorId(@PathVariable Long id) {
-        return bodegaService.obtenerPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(bodegaService.obtenerPorId(id));
+    }
+
+    @GetMapping("/buscar")
+    public ResponseEntity<List<Bodega>> buscarPorNombre(@RequestParam String nombre) {
+        return ResponseEntity.ok(bodegaService.buscarPorNombre(nombre));
     }
 
     @PostMapping
     public ResponseEntity<Bodega> crear(@Valid @RequestBody Bodega bodega) {
-        Bodega creada = bodegaService.crear(bodega);
-        return ResponseEntity.status(201).body(creada);
+        return new ResponseEntity<>(bodegaService.guardar(bodega), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Bodega> actualizar(@PathVariable Long id,
-                                              @Valid @RequestBody Bodega datos) {
-        return bodegaService.actualizar(id, datos)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Bodega> actualizar(@PathVariable Long id, @Valid @RequestBody Bodega bodega) {
+        return ResponseEntity.ok(bodegaService.actualizar(id, bodega));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        boolean eliminado = bodegaService.eliminar(id);
-        return eliminado ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        bodegaService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 }
