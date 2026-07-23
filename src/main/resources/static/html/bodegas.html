@@ -131,7 +131,7 @@
                   <th class="is-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="bodegas-tbody">
                 <tr data-name="Centro de Distribución Norte" data-location="Monterrey, NL" data-capacity="14000" data-manager="Carlos Rivera">
                   <td class="metric-cell__value">WH-1042</td>
                   <td class="product-cell__name">Centro de Distribución Norte</td>
@@ -277,7 +277,12 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="bodega-encargado">Encargado</label>
-        <input class="form-input" id="bodega-encargado" name="encargado" type="text" placeholder="Nombre del supervisor" required>
+        <div class="select-wrapper">
+          <select class="form-select" id="bodega-encargado" name="encargado" required>
+            <option value="" disabled selected>Selecciona un encargado...</option>
+          </select>
+          <span class="material-symbols-outlined">expand_more</span>
+        </div>
       </div>
     </form>
 
@@ -313,6 +318,7 @@
   </div>
 </div>
 
+<script src="../js/api.js"></script>
 <script src="../js/script.js"></script>
 </body>
 </html>
