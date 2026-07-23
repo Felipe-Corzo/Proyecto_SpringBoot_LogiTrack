@@ -133,7 +133,7 @@
 
         <div class="table-card" data-animate style="animation-delay:140ms">
           <div class="table-card__header flex-between">
-            <h3 class="panel__title">Registros (425)</h3>
+            <h3 class="panel__title">Registros</h3>
             <div class="row-actions" style="opacity: 1;">
               <button class="row-action-btn" type="button" title="Actualizar"><span class="material-symbols-outlined">refresh</span></button>
               <button class="row-action-btn" type="button" title="Filtrar"><span class="material-symbols-outlined">filter_list</span></button>
@@ -151,97 +151,12 @@
                   <th class="is-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td><span class="status-badge status-badge--insert">INSERT</span></td>
-                  <td class="cell-mono">2023-10-27 14:32:01</td>
-                  <td>
-                    <div class="user-cell">
-                      <div class="avatar avatar--sm">JD</div>
-                      <span>j.doe@logitrac.com</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="entity-cell">
-                      <span class="entity-cell__title">Producto</span>
-                      <span class="entity-cell__subtitle">ID: PRD-9921 (Laptop Pro)</span>
-                    </div>
-                  </td>
-                  <td class="is-right">
-                    <button class="row-action-btn" type="button" data-action="view" title="Ver detalle">
-                      <span class="material-symbols-outlined">visibility</span>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><span class="status-badge status-badge--update">UPDATE</span></td>
-                  <td class="cell-mono">2023-10-27 13:15:44</td>
-                  <td>
-                    <div class="user-cell">
-                      <div class="avatar avatar--sm">AS</div>
-                      <span>a.smith@logitrac.com</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="entity-cell">
-                      <span class="entity-cell__title">Movimiento</span>
-                      <span class="entity-cell__subtitle">ID: MOV-4042 (Status: Pending -&gt; Shipped)</span>
-                    </div>
-                  </td>
-                  <td class="is-right">
-                    <button class="row-action-btn" type="button" data-action="view" title="Ver detalle">
-                      <span class="material-symbols-outlined">visibility</span>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><span class="status-badge status-badge--delete">DELETE</span></td>
-                  <td class="cell-mono">2023-10-27 11:05:12</td>
-                  <td>
-                    <div class="user-cell">
-                      <div class="avatar avatar--sm bg-danger">AD</div>
-                      <span>sys_admin (API)</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="entity-cell">
-                      <span class="entity-cell__title">Bodega</span>
-                      <span class="entity-cell__subtitle">ID: WH-B (Zona Norte - Obsoleta)</span>
-                    </div>
-                  </td>
-                  <td class="is-right">
-                    <button class="row-action-btn" type="button" data-action="view" title="Ver detalle">
-                      <span class="material-symbols-outlined">visibility</span>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><span class="status-badge status-badge--update">UPDATE</span></td>
-                  <td class="cell-mono">2023-10-27 09:40:18</td>
-                  <td>
-                    <div class="user-cell">
-                      <div class="avatar avatar--sm">MB</div>
-                      <span>m.brown@logitrac.com</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="entity-cell">
-                      <span class="entity-cell__title">Producto</span>
-                      <span class="entity-cell__subtitle">ID: PRD-1102 (Stock adjustment: +50)</span>
-                    </div>
-                  </td>
-                  <td class="is-right">
-                    <button class="row-action-btn" type="button" data-action="view" title="Ver detalle">
-                      <span class="material-symbols-outlined">visibility</span>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
+              <tbody></tbody>
             </table>
           </div>
 
           <div class="pagination">
-            <span class="pagination__info">Mostrando 1 a 4 de 425 registros</span>
+            <span class="pagination__info">Mostrando registros</span>
             <div class="pagination__controls">
               <button class="pagination__btn" type="button" disabled>Ant</button>
               <button class="pagination__btn is-active" type="button">1</button>
@@ -288,7 +203,7 @@
     <div class="modal__header">
       <div>
         <h2 class="modal__title" id="audit-modal-title">Detalle de Auditoría</h2>
-        <p class="content__subtitle mt-1">ID: INV-2023-08-4592 • Usuario: admin@logitrak.co</p>
+        <p class="content__subtitle mt-1" id="audit-modal-subtitle"></p>
       </div>
       <button class="modal__close" type="button" aria-label="Cerrar" data-modal-dismiss>
         <span class="material-symbols-outlined">close</span>
@@ -296,72 +211,8 @@
     </div>
 
     <div class="modal__body">
-      <div class="info-badges-group">
-        <div class="info-badge">
-          <span class="material-symbols-outlined icon-sm">schedule</span>
-          Oct 24, 2023 14:32:01 UTC
-        </div>
-        <div class="info-badge info-badge--accent">
-          <span class="material-symbols-outlined icon-sm">build</span>
-          Acción: UPDATE_INVENTORY
-        </div>
-      </div>
-
-      <div class="diff-grid">
-        <div class="diff-panel">
-          <div class="diff-panel__header">Valores anteriores</div>
-          <div class="diff-panel__content">
-            <table class="diff-table">
-              <tbody>
-                <tr><td>sku</td><td>WH-A-1029</td></tr>
-                <tr><td>location</td><td>Zone B, Rack 4, Bin 12</td></tr>
-                <tr class="diff-row--removed">
-                  <td>quantity</td>
-                  <td>450</td>
-                </tr>
-                <tr class="diff-row--removed">
-                  <td>status</td>
-                  <td>AVAILABLE</td>
-                </tr>
-                <tr><td>last_counted</td><td>2023-10-15T08:00:00Z</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="diff-panel">
-          <div class="diff-panel__header">Valores nuevos</div>
-          <div class="diff-panel__content">
-            <table class="diff-table">
-              <tbody>
-                <tr><td>sku</td><td>WH-A-1029</td></tr>
-                <tr><td>location</td><td>Zone B, Rack 4, Bin 12</td></tr>
-                <tr class="diff-row--added">
-                  <td>quantity</td>
-                  <td>425</td>
-                </tr>
-                <tr class="diff-row--added">
-                  <td>status</td>
-                  <td>LOW_STOCK</td>
-                </tr>
-                <tr><td>last_counted</td><td>2023-10-15T08:00:00Z</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-group mt-4">
-        <label class="form-label">Razón de Auditoría / Notas</label>
-        <div class="read-only-box">
-          Ajuste manual tras discrepancia de conteo cíclico reportada por Operador JD. Se encontraron 25 unidades dañadas durante el tránsito, movidas a cuarentena.
-        </div>
-      </div>
-    </div>
-
-    <div class="modal__footer">
-      <button class="toolbar-btn toolbar-btn--outline" type="button" data-modal-dismiss>Revertir Cambios</button>
-      <button class="toolbar-btn toolbar-btn--primary" type="button" data-modal-dismiss>
+      <div class="info-badges-group" id="audit-modal-badges"></div>
+      <div id="audit-modal-content"></div>
         Reconocer
       </button>
     </div>

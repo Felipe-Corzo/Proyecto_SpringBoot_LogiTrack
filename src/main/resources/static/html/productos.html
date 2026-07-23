@@ -30,11 +30,11 @@
     </div>
 
     <nav class="sidebar__nav">
-      <a class="sidebar__link" href="dashboard.html">Dashboard</a>
+      <a class="sidebar__link" href="dashboard.html">
         <span class="material-symbols-outlined icon-lg">dashboard</span>
         Dashboard
       </a>
-      <a class="sidebar__link" href="bodegas.html">Bodegas</a>
+      <a class="sidebar__link" href="bodegas.html">
         <span class="material-symbols-outlined icon-lg">inventory_2</span>
         Bodegas
       </a>
@@ -42,11 +42,11 @@
         <span class="material-symbols-outlined is-filled icon-lg">package_2</span>
         Productos
       </a>
-      <a class="sidebar__link" href="movimientos.html">Movimientos</a>
+      <a class="sidebar__link" href="movimientos.html">
         <span class="material-symbols-outlined icon-lg">swap_horiz</span>
         Movimientos
       </a>
-      <a class="sidebar__link" href="auditoria.html">Auditoría</a>
+      <a class="sidebar__link" href="auditoria.html">
         <span class="material-symbols-outlined icon-lg">history_edu</span>
         Auditoría
       </a>
@@ -151,64 +151,7 @@
                   <th class="is-center">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr data-id="PRD-001" data-name="Logitech MX Master 3S" data-category="electronics" data-stock="45" data-price="99.99">
-                  <td class="metric-cell__value">PRD-001</td>
-                  <td class="product-cell__name">Logitech MX Master 3S</td>
-                  <td class="cell-muted">Electrónica</td>
-                  <td class="is-right"><span class="metric-cell__value">45</span></td>
-                  <td class="is-right"><span class="metric-cell__value">$99.99</span></td>
-                  <td class="is-center">
-                    <div class="row-actions row-actions--center">
-                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr class="is-low-stock" data-id="PRD-042" data-name="Ergonomic Office Chair" data-category="furniture" data-stock="4" data-price="349.00">
-                  <td class="metric-cell__value">PRD-042</td>
-                  <td class="product-cell__name">Ergonomic Office Chair</td>
-                  <td class="cell-muted">Mobiliario</td>
-                  <td class="is-right">
-                    <span class="stock-badge"><span class="material-symbols-outlined">warning</span>4</span>
-                  </td>
-                  <td class="is-right"><span class="metric-cell__value">$349.00</span></td>
-                  <td class="is-center">
-                    <div class="row-actions row-actions--center">
-                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr data-id="PRD-109" data-name="Mechanical Keyboard Keychron K2" data-category="electronics" data-stock="112" data-price="89.50">
-                  <td class="metric-cell__value">PRD-109</td>
-                  <td class="product-cell__name">Mechanical Keyboard Keychron K2</td>
-                  <td class="cell-muted">Electrónica</td>
-                  <td class="is-right"><span class="metric-cell__value">112</span></td>
-                  <td class="is-right"><span class="metric-cell__value">$89.50</span></td>
-                  <td class="is-center">
-                    <div class="row-actions row-actions--center">
-                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr class="is-low-stock" data-id="PRD-088" data-name="Standing Desk Frame" data-category="furniture" data-stock="0" data-price="299.99">
-                  <td class="metric-cell__value">PRD-088</td>
-                  <td class="product-cell__name">Standing Desk Frame</td>
-                  <td class="cell-muted">Mobiliario</td>
-                  <td class="is-right">
-                    <span class="stock-badge"><span class="material-symbols-outlined">warning</span>0</span>
-                  </td>
-                  <td class="is-right"><span class="metric-cell__value">$299.99</span></td>
-                  <td class="is-center">
-                    <div class="row-actions row-actions--center">
-                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
+              <tbody id="products-tbody"></tbody>
             </table>
 
             <div class="table-empty-state" id="products-empty-state">

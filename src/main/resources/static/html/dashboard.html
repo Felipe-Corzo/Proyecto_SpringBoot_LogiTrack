@@ -36,23 +36,23 @@
       </div>
 
       <nav class="sidebar__nav">
-        <a class="sidebar__link is-active" href="dashboard.html">Dashboard</a>
+        <a class="sidebar__link is-active" href="dashboard.html">
           <span class="material-symbols-outlined is-filled icon-lg">dashboard</span>
           Dashboard
         </a>
-        <a class="sidebar__link" href="bodegas.html">Bodegas</a>
+        <a class="sidebar__link" href="bodegas.html">
           <span class="material-symbols-outlined icon-lg">inventory_2</span>
           Bodegas
         </a>
-        <a class="sidebar__link" href="productos.html">Productos</a>
+        <a class="sidebar__link" href="productos.html">
           <span class="material-symbols-outlined icon-lg">package_2</span>
           Productos
         </a>
-        <a class="sidebar__link" href="movimientos.html">Movimientos</a>
+        <a class="sidebar__link" href="movimientos.html">
           <span class="material-symbols-outlined icon-lg">swap_horiz</span>
           Movimientos
         </a>
-        <a class="sidebar__link" href="auditoria.html">Auditoría</a>
+        <a class="sidebar__link" href="auditoria.html">
           <span class="material-symbols-outlined icon-lg">history_edu</span>
           Auditoría
         </a>
@@ -99,7 +99,7 @@
             <span class="material-symbols-outlined icon-sm">logout</span>
             Cerrar sesión
           </button>
-          <div class="avatar" title="María Reyes">MR</div>
+          <div class="avatar"></div>
         </div>
       </header>
 
@@ -115,8 +115,13 @@
             <div class="content__controls">
               <div class="date-picker">
                 <span class="material-symbols-outlined">calendar_today</span>
-                <span class="date-picker__label">Últimos 30 días</span>
-                <span class="material-symbols-outlined">arrow_drop_down</span>
+                <select class="date-picker__select" id="dashboard-range" aria-label="Rango de fechas">
+                  <option value="7">Últimos 7 días</option>
+                  <option value="30" selected>Últimos 30 días</option>
+                  <option value="90">Últimos 90 días</option>
+                  <option value="180">Últimos 180 días</option>
+                  <option value="365">Últimos 365 días</option>
+                </select>
               </div>
               <button class="btn-refresh" type="button">
                 <span class="material-symbols-outlined">refresh</span>
@@ -212,45 +217,14 @@
                   <div class="bar-chart__gridline"><span class="bar-chart__gridline-label">2.5k</span></div>
                   <div class="bar-chart__gridline"><span class="bar-chart__gridline-label">0</span></div>
                 </div>
-                <div class="bar-chart__bars" id="bar-chart-bars">
-                  <div class="chart-bar">
-                    <div class="chart-bar__fill" style="height: 85%; --bar-height: 85%;">
-                      <span class="chart-bar__tooltip">8,500</span>
-                    </div>
-                    <span class="chart-bar__label">Norte</span>
-                  </div>
-                  <div class="chart-bar">
-                    <div class="chart-bar__fill" style="height: 45%; --bar-height: 45%;">
-                      <span class="chart-bar__tooltip">4,500</span>
-                    </div>
-                    <span class="chart-bar__label">Sur</span>
-                  </div>
-                  <div class="chart-bar">
-                    <div class="chart-bar__fill chart-bar__fill--accent" style="height: 65%; --bar-height: 65%;">
-                      <span class="chart-bar__tooltip">6,500</span>
-                    </div>
-                    <span class="chart-bar__label">Este</span>
-                  </div>
-                  <div class="chart-bar">
-                    <div class="chart-bar__fill" style="height: 30%; --bar-height: 30%;">
-                      <span class="chart-bar__tooltip">3,000</span>
-                    </div>
-                    <span class="chart-bar__label">Oeste</span>
-                  </div>
-                  <div class="chart-bar">
-                    <div class="chart-bar__fill" style="height: 95%; --bar-height: 95%;">
-                      <span class="chart-bar__tooltip">9,500</span>
-                    </div>
-                    <span class="chart-bar__label">Central</span>
-                  </div>
-                </div>
+                <div class="bar-chart__bars" id="bar-chart-bars"></div>
               </div>
             </div>
 
             <div class="panel data-grid__table">
               <div class="panel__header">
                 <h3 class="panel__title">Top 5: Más movidos</h3>
-                <a class="panel__link" href="#">Ver todos</a>
+                <button class="panel__link" id="ver-todos-top-movidos" type="button">Ver todos</button>
               </div>
               <div class="data-table-wrapper">
                 <table class="data-table">
@@ -260,95 +234,7 @@
                       <th class="is-right">Mov.</th>
                     </tr>
                   </thead>
-                  <tbody id="top-movidos-tbody">
-                    <tr>
-                      <td>
-                        <div class="product-cell">
-                          <div class="product-cell__icon"><span class="material-symbols-outlined">pallet</span></div>
-                          <div>
-                            <div class="product-cell__name">Pallet Standard A1</div>
-                            <div class="product-cell__sku">SKU-PLT-001</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="is-right">
-                        <span class="metric-cell__value">342</span>
-                        <div class="metric-cell__trend metric-cell__trend--up">
-                          <span class="material-symbols-outlined">arrow_upward</span>12%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <div class="product-cell">
-                          <div class="product-cell__icon"><span class="material-symbols-outlined">inventory_2</span>
-                          </div>
-                          <div>
-                            <div class="product-cell__name">Caja Cartón 50x50</div>
-                            <div class="product-cell__sku">SKU-BOX-050</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="is-right">
-                        <span class="metric-cell__value">289</span>
-                        <div class="metric-cell__trend metric-cell__trend--flat">
-                          <span class="material-symbols-outlined">horizontal_rule</span>0%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <div class="product-cell">
-                          <div class="product-cell__icon"><span
-                              class="material-symbols-outlined">precision_manufacturing</span></div>
-                          <div>
-                            <div class="product-cell__name">Motor Eléctrico X2</div>
-                            <div class="product-cell__sku">SKU-MTR-002</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="is-right">
-                        <span class="metric-cell__value">156</span>
-                        <div class="metric-cell__trend metric-cell__trend--up">
-                          <span class="material-symbols-outlined">arrow_upward</span>5%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <div class="product-cell">
-                          <div class="product-cell__icon"><span class="material-symbols-outlined">cable</span></div>
-                          <div>
-                            <div class="product-cell__name">Cable Cobre 100m</div>
-                            <div class="product-cell__sku">SKU-CBL-100</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="is-right">
-                        <span class="metric-cell__value">112</span>
-                        <div class="metric-cell__trend metric-cell__trend--down">
-                          <span class="material-symbols-outlined">arrow_downward</span>3%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <div class="product-cell">
-                          <div class="product-cell__icon"><span class="material-symbols-outlined">hardware</span></div>
-                          <div>
-                            <div class="product-cell__name">Tornillos Inox M8</div>
-                            <div class="product-cell__sku">SKU-TRN-008</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="is-right">
-                        <span class="metric-cell__value">98</span>
-                        <div class="metric-cell__trend metric-cell__trend--up">
-                          <span class="material-symbols-outlined">arrow_upward</span>18%
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
+                  <tbody id="top-movidos-tbody"></tbody>
                 </table>
               </div>
             </div>
@@ -380,6 +266,23 @@
 
     <!-- Overlay para el menú móvil -->
     <div class="mobile-overlay"></div>
+  </div>
+
+  <div class="modal-backdrop" id="top-products-modal">
+    <div class="modal modal--lg" role="dialog" aria-modal="true" aria-labelledby="top-products-modal-title">
+      <div class="modal__header">
+        <div>
+          <h2 class="modal__title" id="top-products-modal-title">Productos más movidos</h2>
+          <p class="content__subtitle mt-1" id="top-products-modal-subtitle">Top 20 en el rango seleccionado.</p>
+        </div>
+        <button class="modal__close" type="button" aria-label="Cerrar" data-modal-dismiss>
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div id="top-products-modal-body"></div>
+      </div>
+    </div>
   </div>
 
   <script src="../js/api.js"></script>

@@ -108,33 +108,33 @@ function initModalEscapeHandling() {
   });
 }
 
+let dashboardState = {
+  resumen: null,
+  productos: []
+};
+
 async function cargarDashboard() {
   const shell = document.querySelector('.kpi-grid');
   if (!shell) return; // no estamos en dashboard.html
 
   protegerRuta();
 
+  const rangeSelect = document.getElementById('dashboard-range');
+  const dias = rangeSelect ? Number(rangeSelect.value) : 30;
+
   try {
-    const [bodegas, productos, stockBajo, resumen] = await Promise.all([
-      apiFetch('/api/bodegas'),
-      apiFetch('/api/productos'),
-      apiFetch('/api/productos/stock-bajo?umbral=10'),
-      apiFetch('/api/reportes/resumen'),
-    ]);
+    const resumen = await apiFetch(`/api/reportes/resumen?dias=${dias}&limit=20`);
+    dashboardState.resumen = resumen;
+    dashboardState.productos = Array.isArray(resumen.productosMasMovidos) ? resumen.productosMasMovidos : [];
 
-    document.getElementById('kpi-total-bodegas').textContent = bodegas.length;
-    document.getElementById('kpi-total-productos').textContent = productos.length;
-    document.getElementById('kpi-stock-bajo').textContent = stockBajo.length;
+    document.getElementById('kpi-total-bodegas').textContent = resumen.totalBodegas;
+    document.getElementById('kpi-total-productos').textContent = resumen.totalProductos;
+    document.getElementById('kpi-stock-bajo').textContent = resumen.productosBajoStock;
+    document.getElementById('kpi-movimientos-mes').textContent = resumen.totalMovimientosMes;
 
-    // Movimientos de "este mes" via /api/movimientos/rango
-    const ahora = new Date();
-    const desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().slice(0, 19);
-    const hasta = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59).toISOString().slice(0, 19);
-    const movimientosMes = await apiFetch(`/api/movimientos/rango?desde=${desde}&hasta=${hasta}`);
-    document.getElementById('kpi-movimientos-mes').textContent = movimientosMes.length;
-
-    renderBarChart(resumen.stockPorBodega);
-    renderTopMovidos(resumen.productosMasMovidos);
+    renderBarChart(resumen.stockPorBodega || []);
+    renderTopMovidos(dashboardState.productos.slice(0, 5));
+    renderTopProductsModal(dashboardState.productos);
   } catch (err) {
     console.error('Error cargando dashboard:', err);
   }
@@ -145,14 +145,20 @@ function renderBarChart(stockPorBodega) {
   if (!contenedor) return;
   contenedor.innerHTML = '';
 
+  if (!Array.isArray(stockPorBodega) || stockPorBodega.length === 0) {
+    contenedor.innerHTML = '<div class="chart-empty">No hay datos de stock por bodega</div>';
+    return;
+  }
+
   const max = Math.max(...stockPorBodega.map((b) => Number(b.stockTotal)), 1);
 
   stockPorBodega.forEach((bodega) => {
     const porcentaje = Math.round((Number(bodega.stockTotal) / max) * 100);
+    const fillClass = bodega.stockTotal === Math.max(...stockPorBodega.map((b) => Number(b.stockTotal))) ? ' chart-bar__fill--accent' : '';
     const div = document.createElement('div');
     div.className = 'chart-bar';
     div.innerHTML = `
-      <div class="chart-bar__fill" style="height:${porcentaje}%; --bar-height:${porcentaje}%;">
+      <div class="chart-bar__fill${fillClass}" style="height:${porcentaje}%; --bar-height:${porcentaje}%;">
         <span class="chart-bar__tooltip">${bodega.stockTotal}</span>
       </div>
       <span class="chart-bar__label">${bodega.bodegaNombre}</span>`;
@@ -163,7 +169,14 @@ function renderBarChart(stockPorBodega) {
 function renderTopMovidos(productos) {
   const tbody = document.getElementById('top-movidos-tbody');
   if (!tbody) return;
-  tbody.innerHTML = productos.map((p) => `
+
+  const items = Array.isArray(productos) ? productos : [];
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="2" class="is-center cell-muted">No hay movimientos en este rango.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map((p) => `
     <tr>
       <td>
         <div class="product-cell">
@@ -173,6 +186,46 @@ function renderTopMovidos(productos) {
       </td>
       <td class="is-right"><span class="metric-cell__value">${p.totalMovido}</span></td>
     </tr>`).join('');
+}
+
+function renderTopProductsModal(productos) {
+  const body = document.getElementById('top-products-modal-body');
+  const subtitle = document.getElementById('top-products-modal-subtitle');
+  if (!body) return;
+
+  const items = Array.isArray(productos) ? productos : [];
+  if (subtitle) {
+    subtitle.textContent = items.length > 0 ? `Mostrando ${items.length} productos en el rango seleccionado.` : 'No hay productos para mostrar en este rango.';
+  }
+
+  if (!items.length) {
+    body.innerHTML = '<div class="chart-empty">No hay productos movidos en este rango.</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="is-right">Mov.</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((p) => `
+            <tr>
+              <td>
+                <div class="product-cell">
+                  <div class="product-cell__icon"><span class="material-symbols-outlined">package_2</span></div>
+                  <div><div class="product-cell__name">${p.nombre}</div></div>
+                </div>
+              </td>
+              <td class="is-right"><span class="metric-cell__value">${p.totalMovido}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 document.addEventListener('DOMContentLoaded', cargarDashboard);
@@ -254,7 +307,7 @@ function initLoginPage() {
     clearErrorOnInput();
     setLoadingState(true);
   
-    apiFetch('/auth/login', {
+    apiFetch('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
         username: usernameInput.value,
@@ -278,7 +331,10 @@ function initLoginPage() {
 function initDashboardWidgets() {
   const bars = document.querySelectorAll('.chart-bar__fill');
   const refreshBtn = document.querySelector('.btn-refresh');
-  if (!bars.length && !refreshBtn) return;
+  const rangeSelect = document.getElementById('dashboard-range');
+  const verTodosBtn = document.getElementById('ver-todos-top-movidos');
+  const modal = document.getElementById('top-products-modal');
+  if (!bars.length && !refreshBtn && !rangeSelect && !verTodosBtn && !modal) return;
 
   function animateBars() {
     bars.forEach((bar) => {
@@ -298,16 +354,31 @@ function initDashboardWidgets() {
   animateBars();
 
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => {
+    refreshBtn.addEventListener('click', async () => {
       if (refreshBtn.classList.contains('is-loading')) return;
       refreshBtn.classList.add('is-loading');
       refreshBtn.disabled = true;
 
-      setTimeout(() => {
+      try {
+        await cargarDashboard();
+      } finally {
         refreshBtn.classList.remove('is-loading');
         refreshBtn.disabled = false;
         animateBars();
-      }, 700);
+      }
+    });
+  }
+
+  if (rangeSelect) {
+    rangeSelect.addEventListener('change', () => {
+      cargarDashboard();
+    });
+  }
+
+  if (verTodosBtn && modal) {
+    verTodosBtn.addEventListener('click', () => {
+      renderTopProductsModal(dashboardState.productos);
+      modal.classList.add('is-open');
     });
   }
 }

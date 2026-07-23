@@ -3,6 +3,7 @@ package com.logitrack.dto;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,4 +16,6 @@ public class ResumenReporteDTO {
     private long productosBajoStock;
     private long totalMovimientosMes;
     private BigDecimal valorTotalInventario;
+    private List<StockPorBodegaDTO> stockPorBodega;
+    private List<ProductoMovidoDTO> productosMasMovidos;
 }
