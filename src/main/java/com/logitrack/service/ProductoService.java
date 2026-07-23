@@ -3,20 +3,22 @@ package com.logitrack.service;
 import com.logitrack.model.Producto;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ProductoService {
 
     List<Producto> obtenerTodos();
 
-    Optional<Producto> obtenerPorId(Long id);
+    Producto obtenerPorId(Long id);
 
-    Producto crear(Producto producto);
+    Producto guardar(Producto producto);
 
-    Optional<Producto> actualizar(Long id, Producto datos);
+    Producto actualizar(Long id, Producto producto);
 
-    boolean eliminar(Long id);
+    void eliminar(Long id);
 
-    // Se usara desde el paso 7 (consultas avanzadas), lo dejamos listo aqui
-    List<Producto> obtenerConStockBajo(Integer umbral);
+    List<Producto> buscarPorNombre(String nombre);
+
+    List<Producto> buscarBajoStock(Integer umbral);
+
+    List<Producto> filtrarProductos(String nombre, String categoria, Boolean bajoStock);
 }

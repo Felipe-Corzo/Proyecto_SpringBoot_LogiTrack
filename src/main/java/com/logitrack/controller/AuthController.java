@@ -1,87 +1,83 @@
 package com.logitrack.controller;
 
-import com.logitrack.dto.LoginRequestDTO;
-import com.logitrack.dto.LoginResponseDTO;
-import com.logitrack.dto.RegistroRequestDTO;
-import com.logitrack.exception.ResourceNotFoundException;
-import com.logitrack.model.RolUsuario;
+import com.logitrack.dto.AuthResponse;
+import com.logitrack.dto.LoginRequest;
+import com.logitrack.dto.RegisterRequest;
+import com.logitrack.exception.BadRequestException;
 import com.logitrack.model.Usuario;
 import com.logitrack.repository.UsuarioRepository;
-import com.logitrack.security.JwtUtil;
+import com.logitrack.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final JwtTokenProvider tokenProvider;
 
     public AuthController(AuthenticationManager authenticationManager,
-                           UsuarioRepository usuarioRepository,
-                           PasswordEncoder passwordEncoder,
-                           JwtUtil jwtUtil) {
+                          UsuarioRepository usuarioRepository,
+                          PasswordEncoder passwordEncoder,
+                          JwtTokenProvider tokenProvider) {
         this.authenticationManager = authenticationManager;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<LoginResponseDTO> registrar(@Valid @RequestBody RegistroRequestDTO datos) {
-        if (usuarioRepository.existsByUsername(datos.username())) {
-            throw new IllegalArgumentException("El nombre de usuario ya existe");
-        }
-        if (usuarioRepository.existsByEmail(datos.email())) {
-            throw new IllegalArgumentException("El correo ya esta registrado");
-        }
-
-        Usuario usuario = Usuario.builder()
-                .username(datos.username())
-                .email(datos.email())
-                .password(passwordEncoder.encode(datos.password()))
-                .rol(datos.rol() != null ? datos.rol() : RolUsuario.EMPLEADO)
-                .activo(true)
-                .build();
-
-        Usuario creado = usuarioRepository.save(usuario);
-        String token = jwtUtil.generarToken(creado.getId(), creado.getUsername(), creado.getRol().name());
-
-        return ResponseEntity.status(201).body(
-                new LoginResponseDTO(token, creado.getId(), creado.getUsername(), creado.getRol().name()));
+        this.tokenProvider = tokenProvider;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO datos) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(datos.username(), datos.password()));
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getUsername(),
+                        loginRequest.getPassword()
+                )
+        );
 
-        Usuario usuario = usuarioRepository.findByUsername(datos.username())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        String token = tokenProvider.generateToken(authentication);
 
-        String token = jwtUtil.generarToken(usuario.getId(), usuario.getUsername(), usuario.getRol().name());
+        Usuario usuario = usuarioRepository.findByUsername(loginRequest.getUsername())
+                .or(() -> usuarioRepository.findByEmail(loginRequest.getUsername()))
+                .orElseThrow();
 
-        return ResponseEntity.ok(
-                new LoginResponseDTO(token, usuario.getId(), usuario.getUsername(), usuario.getRol().name()));
+        return ResponseEntity.ok(AuthResponse.builder()
+                .token(token)
+                .tokenType("Bearer")
+                .userId(usuario.getId())
+                .username(usuario.getUsername())
+                .email(usuario.getEmail())
+                .rol(usuario.getRol())
+                .build());
     }
 
-    // Util para que el frontend sepa quien esta logueado y su rol sin decodificar el JWT a mano
-    @GetMapping("/me")
-    public ResponseEntity<LoginResponseDTO> me(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        Long usuarioId = jwtUtil.extraerUsuarioId(token);
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        if (usuarioRepository.existsByUsername(registerRequest.getUsername())) {
+            throw new BadRequestException("El nombre de usuario ya está en uso.");
+        }
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        if (usuarioRepository.existsByEmail(registerRequest.getEmail())) {
+            throw new BadRequestException("El correo electrónico ya está registrado.");
+        }
 
-        return ResponseEntity.ok(
-                new LoginResponseDTO(token, usuario.getId(), usuario.getUsername(), usuario.getRol().name()));
+        Usuario usuario = Usuario.builder()
+                .username(registerRequest.getUsername())
+                .email(registerRequest.getEmail())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .rol(registerRequest.getRol())
+                .build();
+
+        usuarioRepository.save(usuario);
+
+        return login(new LoginRequest(registerRequest.getUsername(), registerRequest.getPassword()));
     }
 }

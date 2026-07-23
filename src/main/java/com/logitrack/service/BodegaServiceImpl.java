@@ -1,25 +1,21 @@
 package com.logitrack.service;
 
+import com.logitrack.exception.BadRequestException;
 import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.Bodega;
-import com.logitrack.model.Usuario;
 import com.logitrack.repository.BodegaRepository;
-import com.logitrack.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BodegaServiceImpl implements BodegaService {
 
     private final BodegaRepository bodegaRepository;
-    private final UsuarioRepository usuarioRepository;
 
-    public BodegaServiceImpl(BodegaRepository bodegaRepository,
-                              UsuarioRepository usuarioRepository) {
+    public BodegaServiceImpl(BodegaRepository bodegaRepository) {
         this.bodegaRepository = bodegaRepository;
-        this.usuarioRepository = usuarioRepository;
     }
 
     @Override
@@ -28,56 +24,47 @@ public class BodegaServiceImpl implements BodegaService {
     }
 
     @Override
-    public Optional<Bodega> obtenerPorId(Long id) {
-        return bodegaRepository.findById(id);
+    public Bodega obtenerPorId(Long id) {
+        return bodegaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bodega", "id", id));
     }
 
     @Override
-    public Bodega crear(Bodega bodega) {
-        resolverEncargado(bodega);
-        // Nos aseguramos de que sea un alta, no una actualizacion accidental
-        bodega.setId(null);
+    @Transactional
+    public Bodega guardar(Bodega bodega) {
+        if (bodegaRepository.existsByNombreIgnoreCase(bodega.getNombre())) {
+            throw new BadRequestException("Ya existe una bodega con el nombre: " + bodega.getNombre());
+        }
         return bodegaRepository.save(bodega);
     }
 
     @Override
-    public Optional<Bodega> actualizar(Long id, Bodega datos) {
-        return bodegaRepository.findById(id).map(existente -> {
-            existente.setNombre(datos.getNombre());
-            existente.setUbicacion(datos.getUbicacion());
-            existente.setCapacidad(datos.getCapacidad());
+    @Transactional
+    public Bodega actualizar(Long id, Bodega bodega) {
+        Bodega bodegaExistente = obtenerPorId(id);
+        
+        if (!bodegaExistente.getNombre().equalsIgnoreCase(bodega.getNombre()) &&
+            bodegaRepository.existsByNombreIgnoreCase(bodega.getNombre())) {
+            throw new BadRequestException("Ya existe otra bodega con el nombre: " + bodega.getNombre());
+        }
 
-            datos.setId(existente.getId()); // solo para reutilizar resolverEncargado
-            resolverEncargado(datos);
-            existente.setEncargado(datos.getEncargado());
+        bodegaExistente.setNombre(bodega.getNombre());
+        bodegaExistente.setUbicacion(bodega.getUbicacion());
+        bodegaExistente.setCapacidad(bodega.getCapacidad());
+        bodegaExistente.setEncargado(bodega.getEncargado());
 
-            return bodegaRepository.save(existente);
-        });
+        return bodegaRepository.save(bodegaExistente);
     }
 
     @Override
-    public boolean eliminar(Long id) {
-        if (!bodegaRepository.existsById(id)) {
-            return false;
-        }
-        bodegaRepository.deleteById(id);
-        return true;
+    @Transactional
+    public void eliminar(Long id) {
+        Bodega bodega = obtenerPorId(id);
+        bodegaRepository.delete(bodega);
     }
 
-    /**
-     * El JSON de entrada puede traer "encargado": {"id": 2}. Buscamos el
-     * Usuario real y lo colgamos en la entidad; si no existe, lanzamos error.
-     * Si no se envia encargado, queda en null (bodega sin encargado asignado).
-     */
-    private void resolverEncargado(Bodega bodega) {
-        if (bodega.getEncargado() != null && bodega.getEncargado().getId() != null) {
-            Long encargadoId = bodega.getEncargado().getId();
-            Usuario encargado = usuarioRepository.findById(encargadoId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "No existe un usuario con id " + encargadoId + " para asignar como encargado"));
-            bodega.setEncargado(encargado);
-        } else {
-            bodega.setEncargado(null);
-        }
+    @Override
+    public List<Bodega> buscarPorNombre(String nombre) {
+        return bodegaRepository.findByNombreContainingIgnoreCase(nombre);
     }
 }

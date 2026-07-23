@@ -1,27 +1,22 @@
 package com.logitrack.service;
 
 import com.logitrack.model.MovimientoInventario;
+import com.logitrack.model.TipoMovimiento;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public interface MovimientoInventarioService {
 
     List<MovimientoInventario> obtenerTodos();
 
-    Optional<MovimientoInventario> obtenerPorId(Long id);
+    MovimientoInventario obtenerPorId(Long id);
 
-    /**
-     * Registra el movimiento y actualiza inventario_bodega + productos.stock
-     * segun el tipo (ENTRADA/SALIDA/TRANSFERENCIA). Todo dentro de una sola
-     * transaccion: si algo falla (ej. stock insuficiente), no se guarda nada.
-     */
-    MovimientoInventario crear(MovimientoInventario movimiento);
+    MovimientoInventario registrarMovimiento(MovimientoInventario movimiento);
 
-    List<MovimientoInventario> obtenerPorRangoFechas(LocalDateTime desde, LocalDateTime hasta);
+    List<MovimientoInventario> buscarPorTipo(TipoMovimiento tipo);
 
-    // Nota: no exponemos actualizar/eliminar. Un movimiento ya registrado
-    // es un hecho historico/auditable; si algo estuvo mal, se corrige con
-    // un movimiento inverso, no editando el original.
+    List<MovimientoInventario> buscarPorRangoFechas(LocalDateTime desde, LocalDateTime hasta);
+
+    List<MovimientoInventario> buscarPorBodega(Long bodegaId);
 }

@@ -1,6 +1,6 @@
 package com.logitrack.model;
 
-public enum RolUsuario {
+public enum Rol {
     ADMIN,
     EMPLEADO
 }

@@ -3,17 +3,18 @@ package com.logitrack.service;
 import com.logitrack.model.Bodega;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface BodegaService {
 
     List<Bodega> obtenerTodas();
 
-    Optional<Bodega> obtenerPorId(Long id);
+    Bodega obtenerPorId(Long id);
 
-    Bodega crear(Bodega bodega);
+    Bodega guardar(Bodega bodega);
 
-    Optional<Bodega> actualizar(Long id, Bodega datos);
+    Bodega actualizar(Long id, Bodega bodega);
 
-    boolean eliminar(Long id);
+    void eliminar(Long id);
+
+    List<Bodega> buscarPorNombre(String nombre);
 }

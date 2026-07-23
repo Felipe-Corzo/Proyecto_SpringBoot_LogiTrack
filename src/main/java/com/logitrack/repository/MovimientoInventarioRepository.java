@@ -3,18 +3,23 @@ package com.logitrack.repository;
 import com.logitrack.model.MovimientoInventario;
 import com.logitrack.model.TipoMovimiento;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Repository
 public interface MovimientoInventarioRepository extends JpaRepository<MovimientoInventario, Long> {
 
-    // Consulta 2: movimientos por rango de fechas
+    List<MovimientoInventario> findByTipoMovimiento(TipoMovimiento tipoMovimiento);
+
     List<MovimientoInventario> findByFechaBetween(LocalDateTime desde, LocalDateTime hasta);
 
-    List<MovimientoInventario> findByUsuarioId(Long usuarioId);
+    @Query("SELECT m FROM MovimientoInventario m WHERE m.bodegaOrigen.id = :bodegaId OR m.bodegaDestino.id = :bodegaId")
+    List<MovimientoInventario> findByBodegaId(@Param("bodegaId") Long bodegaId);
 
-    List<MovimientoInventario> findByTipoMovimiento(TipoMovimiento tipo);
-
-    List<MovimientoInventario> findByBodegaOrigenIdOrBodegaDestinoId(Long bodegaOrigenId, Long bodegaDestinoId);
+    @Query("SELECT m FROM MovimientoInventario m ORDER BY m.fecha DESC")
+    List<MovimientoInventario> findAllOrderByFechaDesc();
 }

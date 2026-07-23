@@ -3,16 +3,18 @@ package com.logitrack.repository;
 import com.logitrack.model.Auditoria;
 import com.logitrack.model.TipoOperacion;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface AuditoriaRepository extends JpaRepository<Auditoria, Long> {
 
-    // Consulta 3: auditorias por usuario
-    List<Auditoria> findByUsuarioId(Long usuarioId);
+    List<Auditoria> findByEntidadAfectadaIgnoreCase(String entidadAfectada);
 
-    // Consulta 4: auditorias por tipo de operacion
     List<Auditoria> findByTipoOperacion(TipoOperacion tipoOperacion);
 
-    List<Auditoria> findByEntidadAfectada(String entidadAfectada);
+    List<Auditoria> findByUsuario_Id(Long usuarioId);
+
+    List<Auditoria> findAllByOrderByFechaHoraDesc();
 }
