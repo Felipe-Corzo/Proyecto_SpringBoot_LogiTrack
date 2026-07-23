@@ -8,6 +8,8 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "usuarios")
 @Getter
@@ -26,9 +28,10 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    // No se serializa en respuestas JSON (se configura en el DTO, no aqui)
+    
     @NotBlank
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     @NotBlank

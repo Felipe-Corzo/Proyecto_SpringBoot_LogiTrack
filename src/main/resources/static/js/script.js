@@ -12,14 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initEntranceAnimations();
   initAppShellMobileMenu();
   initModalEscapeHandling();
-  cargarMovimientos();
   initNuevoMovimientoReal();
   initLoginPage();
   initDashboardWidgets();
-  initcargarBodegas();
-  cargarProductos();
-  cargarAuditorias(); 
-  initcargarDashboard(); 
+  initModalDismissButtons();
 });
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -40,6 +36,19 @@ function initEntranceAnimations() {
   }
   requestAnimationFrame(() => {
     els.forEach((el) => el.classList.add('is-visible'));
+  });
+}
+
+function initModalDismissButtons() {
+  document.querySelectorAll('[data-modal-dismiss]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      btn.closest('.modal-backdrop')?.classList.remove('is-open');
+    });
+  });
+  document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) backdrop.classList.remove('is-open');
+    });
   });
 }
 
@@ -355,7 +364,30 @@ function initDashboardWidgets() {
     }
     document.getElementById('bodega-modal-backdrop').classList.add('is-open');
   }
+
+  function abrirProductoModal(mode, data) {
+  const form = document.getElementById('product-form');
+  form.reset();
+  document.getElementById('product-modal-title').textContent =
+    mode === 'edit' ? 'Editar Producto' : 'Nuevo Producto';
+  if (data) {
+    form.elements.nombre.value = data.name || '';
+    form.elements.categoria.value = data.category || '';
+    form.elements.stock.value = data.stock || '';
+    form.elements.precio.value = data.price || '';
+  }
+  document.getElementById('product-modal-backdrop').classList.add('is-open');
+}
   
+  document.getElementById('open-create-modal-btn')?.addEventListener('click', () => {
+  abrirModalBodega('create', null);
+});
+ 
+document.getElementById('open-create-product-modal-btn')?.addEventListener('click', () => {
+  productoIdEditando = null;
+  abrirProductoModal('create', null);
+});
+
   document.getElementById('bodega-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
