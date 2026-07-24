@@ -1,6 +1,7 @@
 package com.logitrack.controller;
 
 import com.logitrack.model.Auditoria;
+import com.logitrack.model.TipoOperacion;
 import com.logitrack.service.AuditoriaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,5 +33,15 @@ public class AuditoriaController {
     @GetMapping("/entidad/{entidad}")
     public ResponseEntity<List<Auditoria>> buscarPorEntidad(@PathVariable String entidad) {
         return ResponseEntity.ok(auditoriaService.buscarPorEntidad(entidad));
+    }
+
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<Auditoria>> buscarPorUsuario(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(auditoriaService.buscarPorUsuario(usuarioId));
+    }
+
+    @GetMapping("/operacion/{tipo}")
+    public ResponseEntity<List<Auditoria>> buscarPorTipoOperacion(@PathVariable TipoOperacion tipo) {
+        return ResponseEntity.ok(auditoriaService.buscarPorTipoOperacion(tipo));
     }
 }

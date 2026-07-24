@@ -4,6 +4,8 @@ import com.logitrack.exception.BadRequestException;
 import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.*;
 import com.logitrack.repository.*;
+
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +22,10 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
     private final InventarioBodegaRepository inventarioBodegaRepository;
 
     public MovimientoInventarioServiceImpl(MovimientoInventarioRepository movimientoRepository,
-                                            ProductoRepository productoRepository,
-                                            BodegaRepository bodegaRepository,
-                                            UsuarioRepository usuarioRepository,
-                                            InventarioBodegaRepository inventarioBodegaRepository) {
+            ProductoRepository productoRepository,
+            BodegaRepository bodegaRepository,
+            UsuarioRepository usuarioRepository,
+            InventarioBodegaRepository inventarioBodegaRepository) {
         this.movimientoRepository = movimientoRepository;
         this.productoRepository = productoRepository;
         this.bodegaRepository = bodegaRepository;
@@ -49,12 +51,12 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
             throw new BadRequestException("El movimiento debe contener al menos un detalle de producto.");
         }
 
-        // Validar usuario
-        if (movimiento.getUsuario() != null && movimiento.getUsuario().getId() != null) {
-            Usuario usuario = usuarioRepository.findById(movimiento.getUsuario().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Usuario", "id", movimiento.getUsuario().getId()));
-            movimiento.setUsuario(usuario);
-        }
+        // Ignorar cualquier "usuario" que venga del cliente y tomar SIEMPRE
+        // el usuario autenticado desde el contexto de seguridad (JWT).
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "username", username));
+        movimiento.setUsuario(usuario);
 
         // Validar bodegas según el tipo de movimiento
         validarBodegasYTipo(movimiento);
@@ -151,7 +153,8 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                 throw new BadRequestException("Para movimientos de ENTRADA se requiere especificar la Bodega Destino.");
             }
             Bodega destino = bodegaRepository.findById(m.getBodegaDestino().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Bodega Destino", "id", m.getBodegaDestino().getId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Bodega Destino", "id", m.getBodegaDestino().getId()));
             m.setBodegaDestino(destino);
             m.setBodegaOrigen(null);
         } else if (m.getTipoMovimiento() == TipoMovimiento.SALIDA) {
@@ -159,21 +162,26 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                 throw new BadRequestException("Para movimientos de SALIDA se requiere especificar la Bodega Origen.");
             }
             Bodega origen = bodegaRepository.findById(m.getBodegaOrigen().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Bodega Origen", "id", m.getBodegaOrigen().getId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Bodega Origen", "id", m.getBodegaOrigen().getId()));
             m.setBodegaOrigen(origen);
             m.setBodegaDestino(null);
         } else if (m.getTipoMovimiento() == TipoMovimiento.TRANSFERENCIA) {
             if (m.getBodegaOrigen() == null || m.getBodegaOrigen().getId() == null ||
-                m.getBodegaDestino() == null || m.getBodegaDestino().getId() == null) {
-                throw new BadRequestException("Para movimientos de TRANSFERENCIA se requieren Bodega Origen y Bodega Destino.");
+                    m.getBodegaDestino() == null || m.getBodegaDestino().getId() == null) {
+                throw new BadRequestException(
+                        "Para movimientos de TRANSFERENCIA se requieren Bodega Origen y Bodega Destino.");
             }
             if (m.getBodegaOrigen().getId().equals(m.getBodegaDestino().getId())) {
-                throw new BadRequestException("La Bodega Origen y Bodega Destino no pueden ser la misma para una transferencia.");
+                throw new BadRequestException(
+                        "La Bodega Origen y Bodega Destino no pueden ser la misma para una transferencia.");
             }
             Bodega origen = bodegaRepository.findById(m.getBodegaOrigen().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Bodega Origen", "id", m.getBodegaOrigen().getId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Bodega Origen", "id", m.getBodegaOrigen().getId()));
             Bodega destino = bodegaRepository.findById(m.getBodegaDestino().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Bodega Destino", "id", m.getBodegaDestino().getId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Bodega Destino", "id", m.getBodegaDestino().getId()));
             m.setBodegaOrigen(origen);
             m.setBodegaDestino(destino);
         }

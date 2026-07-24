@@ -3,88 +3,65 @@ package com.logitrack.listener;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logitrack.model.Auditoria;
 import com.logitrack.model.TipoOperacion;
-import com.logitrack.model.Usuario;
-import com.logitrack.repository.AuditoriaRepository;
-import com.logitrack.repository.UsuarioRepository;
 import jakarta.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
-import java.time.LocalDateTime;
 
 @Component
 public class AuditEntityListener {
 
-    private static AuditoriaRepository auditoriaRepository;
-    private static UsuarioRepository usuarioRepository;
+    // Ya NO se inyecta ningún Repository aquí: el listener no debe escribir en la BD.
+    private static ApplicationEventPublisher eventPublisher;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    public void init(@Lazy AuditoriaRepository auditRepo, @Lazy UsuarioRepository userRepo) {
-        AuditEntityListener.auditoriaRepository = auditRepo;
-        AuditEntityListener.usuarioRepository = userRepo;
+    public void init(ApplicationEventPublisher publisher) {
+        AuditEntityListener.eventPublisher = publisher;
     }
 
     @PostPersist
     public void onPostPersist(Object entity) {
-        registrarAuditoria(TipoOperacion.INSERT, entity, null, serializar(entity));
+        publicarEvento(TipoOperacion.INSERT, entity, null, serializar(entity));
     }
 
     @PostUpdate
     public void onPostUpdate(Object entity) {
-        registrarAuditoria(TipoOperacion.UPDATE, entity, null, serializar(entity));
+        publicarEvento(TipoOperacion.UPDATE, entity, null, serializar(entity));
     }
 
     @PostRemove
     public void onPostRemove(Object entity) {
-        registrarAuditoria(TipoOperacion.DELETE, entity, serializar(entity), null);
+        publicarEvento(TipoOperacion.DELETE, entity, serializar(entity), null);
     }
 
-    private void registrarAuditoria(TipoOperacion tipo, Object entity, String valoresAnteriores, String valoresNuevos) {
-        if (auditoriaRepository == null || entity instanceof Auditoria) {
+    private void publicarEvento(TipoOperacion tipo, Object entity, String valoresAnteriores, String valoresNuevos) {
+        if (eventPublisher == null || entity instanceof Auditoria) {
             return;
         }
-
         try {
-            Long entityId = obtenerIdEntidad(entity);
-            Usuario usuario = obtenerUsuarioAutenticado();
-
-            Auditoria audit = Auditoria.builder()
-                    .tipoOperacion(tipo)
-                    .fechaHora(LocalDateTime.now())
-                    .usuario(usuario)
-                    .entidadAfectada(entity.getClass().getSimpleName())
-                    .entidadId(entityId)
-                    .valoresAnteriores(valoresAnteriores)
-                    .valoresNuevos(valoresNuevos)
-                    .build();
-
-            auditoriaRepository.save(audit);
+            Long entidadId = obtenerIdEntidad(entity);
+            String username = obtenerUsernameAutenticado();
+            eventPublisher.publishEvent(new AuditoriaEvent(
+                    tipo, entity.getClass().getSimpleName(), entidadId, valoresAnteriores, valoresNuevos, username));
         } catch (Exception e) {
-            // Silencioso para evitar romper transacciones de entidades primarias
+            // Silencioso para no romper la transacción de la entidad principal
         }
     }
 
-    /**
-     * Obtiene el usuario autenticado desde el SecurityContextHolder.
-     * Si no hay usuario autenticado, retorna null (se guarda como "Sistema" en frontend).
-     */
-    private Usuario obtenerUsuarioAutenticado() {
+    private String obtenerUsernameAutenticado() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.isAuthenticated()
                     && !"anonymousUser".equals(authentication.getPrincipal())) {
-                String username = authentication.getName();
-                if (username != null && usuarioRepository != null) {
-                    return usuarioRepository.findByUsername(username).orElse(null);
-                }
+                return authentication.getName();
             }
         } catch (Exception e) {
-            // Silencioso: si falla obtener el usuario, se registra sin él
+            // Silencioso
         }
         return null;
     }

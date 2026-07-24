@@ -2,6 +2,7 @@ package com.logitrack.model;
 
 import com.logitrack.listener.AuditEntityListener;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -43,6 +44,7 @@ public class MovimientoInventario {
     @JoinColumn(name = "bodega_destino_id")
     private Bodega bodegaDestino;
 
+    @Valid
     @OneToMany(mappedBy = "movimiento", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<MovimientoDetalle> detalles = new ArrayList<>();
