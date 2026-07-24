@@ -1,6 +1,8 @@
 package com.logitrack.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.logitrack.model.Auditoria;
 import com.logitrack.model.TipoOperacion;
 import jakarta.persistence.*;
@@ -11,17 +13,34 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 @Component
 public class AuditEntityListener {
 
-    // Ya NO se inyecta ningún Repository aquí: el listener no debe escribir en la BD.
     private static ApplicationEventPublisher eventPublisher;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    // Creado a mano (no inyectado por Spring) para evitar el problema de orden
+    // de arranque: Hibernate instancia este listener ANTES de que Spring termine
+    // de registrar el bean ObjectMapper. Le agregamos JavaTimeModule manualmente
+    // para que serialice bien los LocalDateTime.
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    private static final ThreadLocal<Map<Object, String>> snapshots =
+            ThreadLocal.withInitial(IdentityHashMap::new);
 
     @Autowired
     public void init(ApplicationEventPublisher publisher) {
         AuditEntityListener.eventPublisher = publisher;
+    }
+
+    @PostLoad
+    public void onPostLoad(Object entity) {
+        if (entity instanceof Auditoria) return;
+        snapshots.get().put(entity, serializar(entity));
     }
 
     @PostPersist
@@ -31,12 +50,14 @@ public class AuditEntityListener {
 
     @PostUpdate
     public void onPostUpdate(Object entity) {
-        publicarEvento(TipoOperacion.UPDATE, entity, null, serializar(entity));
+        String anterior = snapshots.get().remove(entity);
+        publicarEvento(TipoOperacion.UPDATE, entity, anterior, serializar(entity));
     }
 
     @PostRemove
     public void onPostRemove(Object entity) {
-        publicarEvento(TipoOperacion.DELETE, entity, serializar(entity), null);
+        String anterior = snapshots.get().remove(entity);
+        publicarEvento(TipoOperacion.DELETE, entity, anterior != null ? anterior : serializar(entity), null);
     }
 
     private void publicarEvento(TipoOperacion tipo, Object entity, String valoresAnteriores, String valoresNuevos) {
@@ -49,7 +70,7 @@ public class AuditEntityListener {
             eventPublisher.publishEvent(new AuditoriaEvent(
                     tipo, entity.getClass().getSimpleName(), entidadId, valoresAnteriores, valoresNuevos, username));
         } catch (Exception e) {
-            // Silencioso para no romper la transacción de la entidad principal
+            e.printStackTrace(); // TEMPORAL: para ver en consola si algo falla aquí (revertir después)
         }
     }
 
