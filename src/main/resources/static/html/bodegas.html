@@ -30,23 +30,23 @@
     </div>
 
     <nav class="sidebar__nav">
-      <a class="sidebar__link" href="dashboard.html">Dashboard</a>
+      <a class="sidebar__link" href="dashboard.html">
         <span class="material-symbols-outlined icon-lg">dashboard</span>
         Dashboard
       </a>
-      <a class="sidebar__link is-active" href="bodegas.html">Bodegas</a>
+      <a class="sidebar__link is-active" href="bodegas.html">
         <span class="material-symbols-outlined is-filled icon-lg">inventory_2</span>
         Bodegas
       </a>
-      <a class="sidebar__link" href="productos.html">Productos</a>
+      <a class="sidebar__link" href="productos.html">
         <span class="material-symbols-outlined icon-lg">package_2</span>
         Productos
       </a>
-      <a class="sidebar__link" href="movimientos.html">Movimientos</a>
+      <a class="sidebar__link" href="movimientos.html">
         <span class="material-symbols-outlined icon-lg">swap_horiz</span>
         Movimientos
       </a>
-      <a class="sidebar__link" href="auditoria.html">Auditoría</a>
+      <a class="sidebar__link" href="auditoria.html">
         <span class="material-symbols-outlined icon-lg">history_edu</span>
         Auditoría
       </a>
@@ -131,80 +131,7 @@
                   <th class="is-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody id="bodegas-tbody">
-                <tr data-name="Centro de Distribución Norte" data-location="Monterrey, NL" data-capacity="14000" data-manager="Carlos Rivera">
-                  <td class="metric-cell__value">WH-1042</td>
-                  <td class="product-cell__name">Centro de Distribución Norte</td>
-                  <td>Monterrey, NL</td>
-                  <td class="is-right">
-                    <span class="metric-cell__value">85%</span>
-                    <span style="font-size:11px;color:var(--color-on-surface-variant);margin-left:0.25rem;">(12k/14k)</span>
-                  </td>
-                  <td><span class="status-badge status-badge--success">Operativa</span></td>
-                  <td>Carlos Rivera</td>
-                  <td class="is-right">
-                    <div class="row-actions">
-                      <button class="row-action-btn" type="button" title="Ver detalles" data-action="view"><span class="material-symbols-outlined">visibility</span></button>
-                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr data-name="Bodega Satélite Sur" data-location="Guadalajara, JAL" data-capacity="5000" data-manager="Ana Martínez">
-                  <td class="metric-cell__value">WH-1043</td>
-                  <td class="product-cell__name">Bodega Satélite Sur</td>
-                  <td>Guadalajara, JAL</td>
-                  <td class="is-right">
-                    <span class="metric-cell__value">92%</span>
-                    <span style="font-size:11px;color:var(--color-on-surface-variant);margin-left:0.25rem;">(4.6k/5k)</span>
-                  </td>
-                  <td><span class="status-badge status-badge--warning">Saturada</span></td>
-                  <td>Ana Martínez</td>
-                  <td class="is-right">
-                    <div class="row-actions">
-                      <button class="row-action-btn" type="button" title="Ver detalles" data-action="view"><span class="material-symbols-outlined">visibility</span></button>
-                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr data-name="Almacén Central R-1" data-location="Querétaro, QRO" data-capacity="20000" data-manager="Luis Garza">
-                  <td class="metric-cell__value">WH-1044</td>
-                  <td class="product-cell__name">Almacén Central R-1</td>
-                  <td>Querétaro, QRO</td>
-                  <td class="is-right">
-                    <span class="metric-cell__value">45%</span>
-                    <span style="font-size:11px;color:var(--color-on-surface-variant);margin-left:0.25rem;">(9k/20k)</span>
-                  </td>
-                  <td><span class="status-badge status-badge--success">Operativa</span></td>
-                  <td>Luis Garza</td>
-                  <td class="is-right">
-                    <div class="row-actions">
-                      <button class="row-action-btn" type="button" title="Ver detalles" data-action="view"><span class="material-symbols-outlined">visibility</span></button>
-                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-                <tr data-name="Depósito Frío T2" data-location="CDMX" data-capacity="8000" data-manager="Sofía Vega">
-                  <td class="metric-cell__value">WH-1045</td>
-                  <td class="product-cell__name">Depósito Frío T2</td>
-                  <td>CDMX</td>
-                  <td class="is-right">
-                    <span class="metric-cell__value">--</span>
-                    <span style="font-size:11px;color:var(--color-on-surface-variant);margin-left:0.25rem;">(0/8k)</span>
-                  </td>
-                  <td><span class="status-badge status-badge--danger">Mantenimiento</span></td>
-                  <td>Sofía Vega</td>
-                  <td class="is-right">
-                    <div class="row-actions">
-                      <button class="row-action-btn" type="button" title="Ver detalles" data-action="view"><span class="material-symbols-outlined">visibility</span></button>
-                      <button class="row-action-btn" type="button" title="Editar" data-action="edit"><span class="material-symbols-outlined">edit</span></button>
-                      <button class="row-action-btn row-action-btn--danger" type="button" title="Eliminar" data-action="delete"><span class="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
+              <tbody id="bodegas-tbody"></tbody>
             </table>
           </div>
 

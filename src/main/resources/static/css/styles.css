@@ -886,6 +886,22 @@ input {
   color: var(--color-on-surface);
 }
 
+.date-picker__select {
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface);
+  font: inherit;
+  outline: none;
+  cursor: pointer;
+  min-width: 8.5rem;
+  padding: 0;
+}
+
+.date-picker__select option {
+  color: var(--color-on-surface);
+  background-color: var(--color-surface-container-lowest);
+}
+
 .btn-refresh {
   display: flex;
   align-items: center;
@@ -1149,6 +1165,11 @@ input {
   font-weight: 500;
   color: var(--color-on-tertiary-container);
   text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .panel__link:hover {

@@ -27,12 +27,6 @@ import java.util.Collections;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -52,8 +46,7 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
@@ -64,7 +57,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .formLogin(form -> form.disable())

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -33,6 +34,16 @@ public class GlobalExceptionHandler {
         response.put("error", "Bad Request");
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Map<String, Object>> handleNoSuchElementException(NoSuchElementException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        response.put("error", "Not Found");
+        response.put("message", ex.getMessage() != null ? ex.getMessage() : "El recurso solicitado no fue encontrado.");
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

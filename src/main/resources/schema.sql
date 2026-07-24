@@ -60,3 +60,14 @@ CREATE TABLE IF NOT EXISTS auditorias (
     valores_nuevos TEXT,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
+
+-- Tabla: inventario_bodega (stock de cada producto por bodega)
+CREATE TABLE IF NOT EXISTS inventario_bodega (
+    id BIGSERIAL PRIMARY KEY,
+    producto_id BIGINT NOT NULL,
+    bodega_id BIGINT NOT NULL,
+    stock INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
+    FOREIGN KEY (bodega_id) REFERENCES bodegas(id) ON DELETE CASCADE,
+    UNIQUE (producto_id, bodega_id)
+);

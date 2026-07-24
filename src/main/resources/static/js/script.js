@@ -108,33 +108,33 @@ function initModalEscapeHandling() {
   });
 }
 
+let dashboardState = {
+  resumen: null,
+  productos: []
+};
+
 async function cargarDashboard() {
   const shell = document.querySelector('.kpi-grid');
   if (!shell) return; // no estamos en dashboard.html
 
   protegerRuta();
 
+  const rangeSelect = document.getElementById('dashboard-range');
+  const dias = rangeSelect ? Number(rangeSelect.value) : 30;
+
   try {
-    const [bodegas, productos, stockBajo, resumen] = await Promise.all([
-      apiFetch('/api/bodegas'),
-      apiFetch('/api/productos'),
-      apiFetch('/api/productos/stock-bajo?umbral=10'),
-      apiFetch('/api/reportes/resumen'),
-    ]);
+    const resumen = await apiFetch(`/api/reportes/resumen?dias=${dias}&limit=20`);
+    dashboardState.resumen = resumen;
+    dashboardState.productos = Array.isArray(resumen.productosMasMovidos) ? resumen.productosMasMovidos : [];
 
-    document.getElementById('kpi-total-bodegas').textContent = bodegas.length;
-    document.getElementById('kpi-total-productos').textContent = productos.length;
-    document.getElementById('kpi-stock-bajo').textContent = stockBajo.length;
+    document.getElementById('kpi-total-bodegas').textContent = resumen.totalBodegas;
+    document.getElementById('kpi-total-productos').textContent = resumen.totalProductos;
+    document.getElementById('kpi-stock-bajo').textContent = resumen.productosBajoStock;
+    document.getElementById('kpi-movimientos-mes').textContent = resumen.totalMovimientosMes;
 
-    // Movimientos de "este mes" via /api/movimientos/rango
-    const ahora = new Date();
-    const desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().slice(0, 19);
-    const hasta = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59).toISOString().slice(0, 19);
-    const movimientosMes = await apiFetch(`/api/movimientos/rango?desde=${desde}&hasta=${hasta}`);
-    document.getElementById('kpi-movimientos-mes').textContent = movimientosMes.length;
-
-    renderBarChart(resumen.stockPorBodega);
-    renderTopMovidos(resumen.productosMasMovidos);
+    renderBarChart(resumen.stockPorBodega || []);
+    renderTopMovidos(dashboardState.productos.slice(0, 5));
+    renderTopProductsModal(dashboardState.productos);
   } catch (err) {
     console.error('Error cargando dashboard:', err);
   }
@@ -145,14 +145,20 @@ function renderBarChart(stockPorBodega) {
   if (!contenedor) return;
   contenedor.innerHTML = '';
 
+  if (!Array.isArray(stockPorBodega) || stockPorBodega.length === 0) {
+    contenedor.innerHTML = '<div class="chart-empty">No hay datos de stock por bodega</div>';
+    return;
+  }
+
   const max = Math.max(...stockPorBodega.map((b) => Number(b.stockTotal)), 1);
 
   stockPorBodega.forEach((bodega) => {
     const porcentaje = Math.round((Number(bodega.stockTotal) / max) * 100);
+    const fillClass = bodega.stockTotal === Math.max(...stockPorBodega.map((b) => Number(b.stockTotal))) ? ' chart-bar__fill--accent' : '';
     const div = document.createElement('div');
     div.className = 'chart-bar';
     div.innerHTML = `
-      <div class="chart-bar__fill" style="height:${porcentaje}%; --bar-height:${porcentaje}%;">
+      <div class="chart-bar__fill${fillClass}" style="height:${porcentaje}%; --bar-height:${porcentaje}%;">
         <span class="chart-bar__tooltip">${bodega.stockTotal}</span>
       </div>
       <span class="chart-bar__label">${bodega.bodegaNombre}</span>`;
@@ -163,7 +169,14 @@ function renderBarChart(stockPorBodega) {
 function renderTopMovidos(productos) {
   const tbody = document.getElementById('top-movidos-tbody');
   if (!tbody) return;
-  tbody.innerHTML = productos.map((p) => `
+
+  const items = Array.isArray(productos) ? productos : [];
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="2" class="is-center cell-muted">No hay movimientos en este rango.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map((p) => `
     <tr>
       <td>
         <div class="product-cell">
@@ -173,6 +186,46 @@ function renderTopMovidos(productos) {
       </td>
       <td class="is-right"><span class="metric-cell__value">${p.totalMovido}</span></td>
     </tr>`).join('');
+}
+
+function renderTopProductsModal(productos) {
+  const body = document.getElementById('top-products-modal-body');
+  const subtitle = document.getElementById('top-products-modal-subtitle');
+  if (!body) return;
+
+  const items = Array.isArray(productos) ? productos : [];
+  if (subtitle) {
+    subtitle.textContent = items.length > 0 ? `Mostrando ${items.length} productos en el rango seleccionado.` : 'No hay productos para mostrar en este rango.';
+  }
+
+  if (!items.length) {
+    body.innerHTML = '<div class="chart-empty">No hay productos movidos en este rango.</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="is-right">Mov.</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((p) => `
+            <tr>
+              <td>
+                <div class="product-cell">
+                  <div class="product-cell__icon"><span class="material-symbols-outlined">package_2</span></div>
+                  <div><div class="product-cell__name">${p.nombre}</div></div>
+                </div>
+              </td>
+              <td class="is-right"><span class="metric-cell__value">${p.totalMovido}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 document.addEventListener('DOMContentLoaded', cargarDashboard);
@@ -254,7 +307,7 @@ function initLoginPage() {
     clearErrorOnInput();
     setLoadingState(true);
   
-    apiFetch('/auth/login', {
+    apiFetch('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
         username: usernameInput.value,
@@ -278,7 +331,10 @@ function initLoginPage() {
 function initDashboardWidgets() {
   const bars = document.querySelectorAll('.chart-bar__fill');
   const refreshBtn = document.querySelector('.btn-refresh');
-  if (!bars.length && !refreshBtn) return;
+  const rangeSelect = document.getElementById('dashboard-range');
+  const verTodosBtn = document.getElementById('ver-todos-top-movidos');
+  const modal = document.getElementById('top-products-modal');
+  if (!bars.length && !refreshBtn && !rangeSelect && !verTodosBtn && !modal) return;
 
   function animateBars() {
     bars.forEach((bar) => {
@@ -298,16 +354,31 @@ function initDashboardWidgets() {
   animateBars();
 
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => {
+    refreshBtn.addEventListener('click', async () => {
       if (refreshBtn.classList.contains('is-loading')) return;
       refreshBtn.classList.add('is-loading');
       refreshBtn.disabled = true;
 
-      setTimeout(() => {
+      try {
+        await cargarDashboard();
+      } finally {
         refreshBtn.classList.remove('is-loading');
         refreshBtn.disabled = false;
         animateBars();
-      }, 700);
+      }
+    });
+  }
+
+  if (rangeSelect) {
+    rangeSelect.addEventListener('change', () => {
+      cargarDashboard();
+    });
+  }
+
+  if (verTodosBtn && modal) {
+    verTodosBtn.addEventListener('click', () => {
+      renderTopProductsModal(dashboardState.productos);
+      modal.classList.add('is-open');
     });
   }
 }
@@ -431,17 +502,91 @@ function abrirModalBodega(mode, data) {
 
 function abrirProductoModal(mode, data) {
   const form = document.getElementById('product-form');
-  if (!form) return;
   form.reset();
+  const isEdit = mode === 'edit';
   document.getElementById('product-modal-title').textContent =
-    mode === 'edit' ? 'Editar Producto' : 'Nuevo Producto';
+    isEdit ? 'Editar Producto' : 'Nuevo Producto';
   if (data) {
     form.elements.nombre.value = data.name || '';
     form.elements.categoria.value = data.category || '';
-    form.elements.stock.value = data.stock || '';
     form.elements.precio.value = data.price || '';
   }
   document.getElementById('product-modal-backdrop')?.classList.add('is-open');
+
+  // Cargar bodegas para distribucion de stock
+  // En edicion: readonly=true para deshabilitar los campos de stock
+  cargarBodegasParaDistribucion(isEdit ? data?.id : null, isEdit);
+}
+
+
+
+async function cargarBodegasParaDistribucion(productoId, readonly) {
+    const container = document.getElementById('stock-distribucion-container');
+    const totalInput = document.getElementById('product-stock-total');
+    if (!container) return;
+
+    try {
+        const bodegas = await apiFetch('/api/bodegas');
+        let inventarios = [];
+
+        // Si estamos editando, cargar inventario actual
+        if (productoId) {
+            try {
+                const productoConInv = await apiFetch(`/api/productos/${productoId}/con-inventario`);
+                inventarios = productoConInv.distribucionStock || [];
+            } catch(e) { /* ignorar */ }
+        }
+
+        // En modo edicion, los campos de stock se muestran como readonly
+        const disabledAttr = readonly ? 'disabled' : '';
+        const readonlyClass = readonly ? ' stock-input--readonly' : '';
+
+        // Mostrar mensaje si es edicion
+        if (readonly) {
+            container.innerHTML = `
+                <div class="form-help-text" style="margin-bottom: 12px; padding: 8px 12px; background: #fef9e7; border-radius: 6px; border-left: 3px solid #f0ad4e;">
+                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">info</span>
+                    El stock solo se asigna al crear el producto. Para modificarlo, use los movimientos de inventario.
+                </div>
+            `;
+        }
+
+        container.innerHTML += bodegas.map(b => {
+            const inv = inventarios.find(i => Number(i.bodegaId) === Number(b.id));
+            const cantidad = inv ? inv.stockTotal : 0;
+            return `
+                <div class="form-grid-2" style="margin-bottom: 8px; align-items: center;">
+                    <label class="form-label" style="margin:0; font-weight:500;">${b.nombre}</label>
+                    <input class="form-input form-input--mono stock-bodega-input${readonlyClass}" 
+                           type="number" min="0" value="${cantidad}" 
+                           data-bodega-id="${b.id}" data-bodega-nombre="${b.nombre}"
+                           placeholder="Stock en ${b.nombre}" ${disabledAttr}>
+                </div>
+            `;
+        }).join('');
+
+        // En creacion, calcular stock total automaticamente
+        if (!readonly) {
+            container.querySelectorAll('.stock-bodega-input').forEach(input => {
+                input.addEventListener('input', calcularStockTotalDistribucion);
+            });
+        }
+        calcularStockTotalDistribucion();
+
+    } catch (err) {
+        container.innerHTML = '<p class="cell-muted">Error al cargar bodegas: ' + err.message + '</p>';
+    }
+}
+
+function calcularStockTotalDistribucion() {
+    const totalInput = document.getElementById('product-stock-total');
+    if (!totalInput) return;
+    const inputs = document.querySelectorAll('.stock-bodega-input');
+    let total = 0;
+    inputs.forEach(input => {
+        total += Number(input.value) || 0;
+    });
+    totalInput.value = total;
 }
 
 document.getElementById('open-create-modal-btn')?.addEventListener('click', () => {
@@ -627,14 +772,30 @@ document.getElementById('product-form')?.addEventListener('submit', async (event
   const payload = {
     nombre: form.elements.nombre.value,
     categoria: form.elements.categoria.value,
-    stock: Number(form.elements.stock.value),
+    stock: 0,
     precio: Number(form.elements.precio.value),
   };
+
   try {
     if (productoIdEditando) {
-      await apiFetch(`/api/productos/${productoIdEditando}`, { method: 'PUT', body: JSON.stringify(payload) });
+      // En edicion solo se envian nombre, categoria y precio (sin stock)
+      await apiFetch(`/api/productos/${productoIdEditando}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
     } else {
-      await apiFetch('/api/productos', { method: 'POST', body: JSON.stringify(payload) });
+      // En creacion se envia producto + distribucion de stock por bodega
+      const stockPorBodega = {};
+      document.querySelectorAll('.stock-bodega-input').forEach(input => {
+        const cantidad = Number(input.value) || 0;
+        if (cantidad > 0) {
+          stockPorBodega[input.dataset.bodegaId] = cantidad;
+        }
+      });
+      await apiFetch('/api/productos/con-inventario', {
+        method: 'POST',
+        body: JSON.stringify({ producto: payload, stockPorBodega })
+      });
     }
     document.getElementById('product-modal-backdrop')?.classList.remove('is-open');
     productoIdEditando = null;

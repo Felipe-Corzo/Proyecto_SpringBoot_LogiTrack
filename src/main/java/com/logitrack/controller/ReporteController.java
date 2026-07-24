@@ -5,6 +5,7 @@ import com.logitrack.service.ReporteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -18,7 +19,9 @@ public class ReporteController {
     }
 
     @GetMapping("/resumen")
-    public ResponseEntity<ResumenReporteDTO> obtenerResumenGeneral() {
-        return ResponseEntity.ok(reporteService.obtenerResumenGeneral());
+    public ResponseEntity<ResumenReporteDTO> obtenerResumenGeneral(
+            @RequestParam(value = "dias", required = false, defaultValue = "30") Integer dias,
+            @RequestParam(value = "limit", required = false, defaultValue = "20") Integer limit) {
+        return ResponseEntity.ok(reporteService.obtenerResumenGeneral(dias, limit));
     }
 }
