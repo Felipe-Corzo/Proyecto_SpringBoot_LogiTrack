@@ -57,7 +57,7 @@ function protegerRuta() {
 function protegerRutaAdmin() {
   const usuario = getUsuarioActual();
   if (!usuario || usuario.rol !== 'ADMIN') {
-    alert('Solo un administrador puede ver la Auditoria.');
+    UIKit.toast('Solo un administrador puede ver la Auditoría.', 'error');
     window.location.href = 'dashboard.html';
   }
 }

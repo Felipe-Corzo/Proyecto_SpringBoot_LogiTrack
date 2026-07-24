@@ -485,13 +485,20 @@ function adjuntarEventosFilasBodega() {
   document.querySelectorAll('#bodegas-tbody [data-action="delete"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const row = btn.closest('tr');
-      if (!confirm(`¿Eliminar la bodega "${row.dataset.name}"?`)) return;
+      const confirmado = await UIKit.confirmDialog({
+        title: 'Eliminar bodega',
+        message: `¿Está seguro que desea eliminar "${row.dataset.name}"? Esta acción no se puede deshacer.`,
+        confirmText: 'Eliminar',
+        danger: true,
+      });
+      if (!confirmado) return;
       try {
         await apiFetch(`/api/bodegas/${row.dataset.id}`, { method: 'DELETE' });
         row.remove();
         todasLasBodegas = todasLasBodegas.filter((b) => b.id != row.dataset.id);
+        UIKit.toast('Bodega eliminada correctamente.', 'success');
       } catch (err) {
-        alert(err.message);
+        UIKit.toast(err.message, 'error');
       }
     });
   });
@@ -631,8 +638,9 @@ document.getElementById('bodega-form')?.addEventListener('submit', async (event)
     }
     document.getElementById('bodega-modal-backdrop')?.classList.remove('is-open');
     cargarBodegas();
+    UIKit.toast(bodegaIdEditando ? 'Bodega actualizada correctamente.' : 'Bodega creada correctamente.', 'success');
   } catch (err) {
-    alert(err.message);
+    UIKit.toast(err.message, 'error');
   }
 });
 
@@ -766,14 +774,21 @@ function adjuntarEventosFilasProducto() {
   document.querySelectorAll('#products-table [data-action="delete"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const row = btn.closest('tr');
-      if (!confirm(`¿Eliminar "${row.dataset.name}"?`)) return;
+      const confirmado = await UIKit.confirmDialog({
+        title: 'Eliminar producto',
+        message: `¿Está seguro que desea eliminar "${row.dataset.name}"? Esta acción no se puede deshacer.`,
+        confirmText: 'Eliminar',
+        danger: true,
+      });
+      if (!confirmado) return;
       try {
         await apiFetch(`/api/productos/${row.dataset.id}`, { method: 'DELETE' });
         row.remove();
         todosLosProductos = todosLosProductos.filter((p) => p.id != row.dataset.id);
         iniciarPaginacionProductos();
+        UIKit.toast('Producto eliminado correctamente.', 'success');
       } catch (err) {
-        alert(err.message);
+        UIKit.toast(err.message, 'error');
       }
     });
   });
@@ -825,8 +840,9 @@ document.getElementById('product-form')?.addEventListener('submit', async (event
     document.getElementById('product-modal-backdrop')?.classList.remove('is-open');
     productoIdEditando = null;
     cargarProductos();
+    UIKit.toast(productoIdEditando ? 'Producto actualizado correctamente.' : 'Producto creado correctamente.', 'success');
   } catch (err) {
-    alert(err.message);
+    UIKit.toast(err.message, 'error');
   }
 });
 
@@ -1104,7 +1120,7 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
   if (!form.checkValidity()) { form.reportValidity(); return; }
 
   const filas = Array.from(document.querySelectorAll('#products-tbody tr'));
-  if (filas.length === 0) { alert('Debes agregar al menos un producto.'); return; }
+  if (filas.length === 0) { UIKit.toast('Debes agregar al menos un producto.', 'warning'); return; }
 
   const detalles = filas.map((row) => ({
     producto: { id: Number(row.querySelector('select').value) },
@@ -1128,10 +1144,10 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
 
   try {
     await apiFetch('/api/movimientos', { method: 'POST', body: JSON.stringify(payload) });
-    alert('Movimiento guardado con éxito');
+    UIKit.toast('Movimiento guardado con éxito.', 'success');
     window.location.href = 'movimientos.html';
   } catch (err) {
-    alert(err.message);
+    UIKit.toast(err.message, 'error');
   }
 });
 
@@ -1277,7 +1293,7 @@ function initEventosFiltroAuditoria() {
 
   exportBtn?.addEventListener('click', () => {
     if (todasLasAuditorias.length === 0) {
-      alert('No hay datos para exportar.');
+      UIKit.toast('No hay datos para exportar.', 'warning');
       return;
     }
     const headers = ['ID', 'Operación', 'FechaHora', 'Usuario', 'Entidad', 'EntidadID'];
@@ -1475,7 +1491,7 @@ function initRegistroEmpleadoModal() {
 
       form.reset();
     } catch (err) {
-      alert('Error al registrar empleado: ' + err.message);
+      UIKit.toast(err.message, 'error');
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalText;
