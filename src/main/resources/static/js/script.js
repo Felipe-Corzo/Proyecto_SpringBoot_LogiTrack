@@ -1138,24 +1138,84 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
 
 
 
+  /* ============================================================================
+   Auditoría (Historial + Filtros + Paginación)
+   ============================================================================ */
+let todasLasAuditorias = [];
+let auditoriasPaginacion = null;
+
+async function cargarAuditorias() {
+  const tbody = document.querySelector('#audit-table tbody');
+  if (!tbody) return;
+  protegerRuta();
+  protegerRutaAdmin();
+
+  try {
+    todasLasAuditorias = await apiFetch('/api/auditorias');
+    poblarFiltroUsuariosAuditoria();
+    filtrarYRenderizarAuditorias();
+    initEventosFiltroAuditoria();
+  } catch (err) {
+    console.error('Error cargando auditorías:', err);
+  }
+}
+
+function poblarFiltroUsuariosAuditoria() {
+  const select = document.getElementById('audit-user-filter');
+  if (!select) return;
+  const usuariosUnicos = [...new Map(
+    todasLasAuditorias.filter((a) => a.usuario).map((a) => [a.usuario.id, a.usuario])
+  ).values()];
+
+  select.innerHTML = '<option value="">Todos los usuarios</option>' +
+    usuariosUnicos.map((u) => `<option value="${u.id}">${u.username}</option>`).join('');
+}
+
+function filtrarYRenderizarAuditorias() {
+  const tbody = document.querySelector('#audit-table tbody');
+  if (!tbody) return;
+
+  const searchInput = (document.getElementById('audit-search-input')?.value || '').toLowerCase().trim();
+  const userId = document.getElementById('audit-user-filter')?.value || '';
+  const opType = document.getElementById('audit-op-filter')?.value || '';
+  const entityType = document.getElementById('audit-entity-filter')?.value || '';
+
   const filtradas = todasLasAuditorias.filter((a) => {
     const userStr = (a.usuario?.username || 'Sistema').toLowerCase();
     const entityStr = (a.entidadAfectada || '').toLowerCase();
     const coincideSearch = !searchInput || userStr.includes(searchInput) || entityStr.includes(searchInput);
-
     const coincideUser = !userId || String(a.usuario?.id) === String(userId);
     const coincideOp = !opType || a.tipoOperacion === opType;
     const coincideEntity = !entityType || a.entidadAfectada === entityType;
-
     return coincideSearch && coincideUser && coincideOp && coincideEntity;
   });
 
+  const pagination = document.getElementById('auditorias-pagination');
+
   if (filtradas.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" class="is-center cell-muted" style="padding: 2rem;">No hay registros de auditoría que coincidan con los filtros.</td></tr>`;
+    if (pagination) pagination.style.display = 'none';
     return;
   }
 
-  tbody.innerHTML = filtradas.map((a) => `
+  if (pagination) pagination.style.display = '';
+
+  auditoriasPaginacion = initPaginacion({
+    data: filtradas,
+    pageSize: 5,
+    renderFn: (slice) => renderAuditorias(slice),
+    infoId: 'auditorias-pagination-info',
+    prevBtnId: 'auditorias-prev-btn',
+    nextBtnId: 'auditorias-next-btn',
+    pageNumbersId: 'auditorias-page-numbers',
+  });
+}
+
+function renderAuditorias(auditorias) {
+  const tbody = document.querySelector('#audit-table tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = auditorias.map((a) => `
     <tr>
       <td><span class="status-badge ${badgeClasePorOperacion(a.tipoOperacion)}">${a.tipoOperacion}</span></td>
       <td class="cell-mono">${new Date(a.fechaHora).toLocaleString('es-CO')}</td>
@@ -1199,6 +1259,7 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
     });
   });
 }
+
 
 function initEventosFiltroAuditoria() {
   const searchInput = document.getElementById('audit-search-input');
@@ -1330,10 +1391,19 @@ function initPaginacion(config) {
     }
   }
 
-  document.getElementById(prevBtnId)?.addEventListener('click', () => {
+  // Clonar/reemplazar los botones prev/next elimina cualquier listener
+  // que se haya quedado pegado de llamadas anteriores a initPaginacion().
+  const prevBtnOriginal = document.getElementById(prevBtnId);
+  const nextBtnOriginal = document.getElementById(nextBtnId);
+  const prevBtn = prevBtnOriginal?.cloneNode(true) ?? null;
+  const nextBtn = nextBtnOriginal?.cloneNode(true) ?? null;
+  if (prevBtnOriginal && prevBtn) prevBtnOriginal.replaceWith(prevBtn);
+  if (nextBtnOriginal && nextBtn) nextBtnOriginal.replaceWith(nextBtn);
+
+  prevBtn?.addEventListener('click', () => {
     if (paginaActual > 1) { paginaActual--; actualizar(); if (onPageChange) onPageChange(paginaActual); }
   });
-  document.getElementById(nextBtnId)?.addEventListener('click', () => {
+  nextBtn?.addEventListener('click', () => {
     if (paginaActual < totalPaginas) { paginaActual++; actualizar(); if (onPageChange) onPageChange(paginaActual); }
   });
 
