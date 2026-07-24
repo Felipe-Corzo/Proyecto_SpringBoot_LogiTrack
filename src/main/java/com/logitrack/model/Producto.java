@@ -1,6 +1,5 @@
 package com.logitrack.model;
 
-import com.logitrack.listener.AuditEntityListener;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -12,7 +11,6 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "productos")
-@EntityListeners(AuditEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor

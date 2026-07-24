@@ -1,5 +1,6 @@
 package com.logitrack.security;
 
+import com.logitrack.config.UserContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +38,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
             String username = tokenProvider.getUsernameFromJWT(token);
 
+            // Establecer el usuario en UserContext (ThreadLocal) para que esté
+            // disponible incluso en contextos donde SecurityContextHolder no funcione
+            // (ej: listeners JPA que Hibernate ejecuta fuera del contenedor Spring).
+            UserContext.setUsername(username);
+
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
@@ -48,7 +54,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            // Limpiar el UserContext al finalizar el request para evitar
+            // fuga de información entre hilos.
+            UserContext.clear();
+        }
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

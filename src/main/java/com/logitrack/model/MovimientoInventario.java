@@ -1,6 +1,5 @@
 package com.logitrack.model;
 
-import com.logitrack.listener.AuditEntityListener;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +11,6 @@ import java.util.List;
 
 @Entity
 @Table(name = "movimientos")
-@EntityListeners(AuditEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor

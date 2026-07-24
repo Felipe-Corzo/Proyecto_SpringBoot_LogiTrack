@@ -14,3 +14,11 @@
 - [x] Mostrar mensaje informativo en zona de stock cuando es edición
 - [x] En submit, cuando es edición: NO enviar stockPorBodega, usar PUT /api/productos/{id}
 
+## Paso 4 - Corregir auditorías (usuario_id = null y eventos no publicados)
+- [x] CREAR SpringContext.java para obtener beans de Spring sin @Autowired
+- [x] CREAR UserContext.java (ThreadLocal para pasar username a través del hilo HTTP)
+- [x] MODIFICAR JwtAuthenticationFilter: establecer UserContext.setUsername() al inicio del request
+- [x] ELIMINAR dependencia de @EntityListeners en Bodega, Producto, MovimientoInventario
+- [x] REESCRIBIR BodegaServiceImpl: guardar auditoría DIRECTAMENTE desde el service
+- [x] REESCRIBIR ProductoServiceImpl: guardar auditoría DIRECTAMENTE desde el service
+- [x] REESCRIBIR MovimientoInventarioServiceImpl: guardar auditoría DIRECTAMENTE desde el service

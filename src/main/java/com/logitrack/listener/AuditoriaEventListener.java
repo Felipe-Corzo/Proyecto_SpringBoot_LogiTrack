@@ -4,6 +4,8 @@ import com.logitrack.model.Auditoria;
 import com.logitrack.model.Usuario;
 import com.logitrack.repository.AuditoriaRepository;
 import com.logitrack.repository.UsuarioRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -12,6 +14,8 @@ import java.time.LocalDateTime;
 
 @Component
 public class AuditoriaEventListener {
+
+    private static final Logger log = LoggerFactory.getLogger(AuditoriaEventListener.class);
 
     private final AuditoriaRepository auditoriaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -40,8 +44,12 @@ public class AuditoriaEventListener {
                     .build();
 
             auditoriaRepository.save(audit);
+            log.info("Auditoría guardada: {} en {} (id={})",
+                    event.getTipoOperacion(), event.getEntidadAfectada(), event.getEntidadId());
         } catch (Exception e) {
-            // Silencioso: un fallo al auditar no debe tumbar la operación de negocio.
+            // No debe tumbar la operación de negocio, pero se loguea para diagnóstico
+            log.error("AuditoriaEventListener: Error al guardar auditoría para {} {} (id={}): {}",
+                    event.getTipoOperacion(), event.getEntidadAfectada(), event.getEntidadId(), e.getMessage(), e);
         }
     }
 }

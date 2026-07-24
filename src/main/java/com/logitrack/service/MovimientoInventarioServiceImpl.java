@@ -1,11 +1,16 @@
 package com.logitrack.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.logitrack.config.UserContext;
 import com.logitrack.exception.BadRequestException;
 import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.*;
 import com.logitrack.repository.*;
 
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,22 +20,31 @@ import java.util.List;
 @Service
 public class MovimientoInventarioServiceImpl implements MovimientoInventarioService {
 
+    private static final Logger log = LoggerFactory.getLogger(MovimientoInventarioServiceImpl.class);
+
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
     private final MovimientoInventarioRepository movimientoRepository;
     private final ProductoRepository productoRepository;
     private final BodegaRepository bodegaRepository;
     private final UsuarioRepository usuarioRepository;
     private final InventarioBodegaRepository inventarioBodegaRepository;
+    private final AuditoriaRepository auditoriaRepository;
 
     public MovimientoInventarioServiceImpl(MovimientoInventarioRepository movimientoRepository,
             ProductoRepository productoRepository,
             BodegaRepository bodegaRepository,
             UsuarioRepository usuarioRepository,
-            InventarioBodegaRepository inventarioBodegaRepository) {
+            InventarioBodegaRepository inventarioBodegaRepository,
+            AuditoriaRepository auditoriaRepository) {
         this.movimientoRepository = movimientoRepository;
         this.productoRepository = productoRepository;
         this.bodegaRepository = bodegaRepository;
         this.usuarioRepository = usuarioRepository;
         this.inventarioBodegaRepository = inventarioBodegaRepository;
+        this.auditoriaRepository = auditoriaRepository;
     }
 
     @Override
@@ -51,9 +65,11 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
             throw new BadRequestException("El movimiento debe contener al menos un detalle de producto.");
         }
 
-        // Ignorar cualquier "usuario" que venga del cliente y tomar SIEMPRE
-        // el usuario autenticado desde el contexto de seguridad (JWT).
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        // Obtener usuario autenticado desde UserContext (ThreadLocal)
+        String username = UserContext.getUsername();
+        if (username == null) {
+            throw new BadRequestException("No se pudo identificar el usuario autenticado.");
+        }
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "username", username));
         movimiento.setUsuario(usuario);
@@ -68,7 +84,6 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                     .orElseThrow(() -> new ResourceNotFoundException("Producto", "id", detalle.getProducto().getId()));
 
             if (movimiento.getTipoMovimiento() == TipoMovimiento.ENTRADA) {
-                // ENTRADA: aumentar stock en bodega_destino y global
                 if (movimiento.getBodegaDestino() == null) {
                     throw new BadRequestException("Para ENTRADA se requiere bodega de destino.");
                 }
@@ -85,7 +100,6 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                 producto.setStock(producto.getStock() + detalle.getCantidad());
 
             } else if (movimiento.getTipoMovimiento() == TipoMovimiento.SALIDA) {
-                // SALIDA: disminuir stock de bodega_origen y global
                 if (movimiento.getBodegaOrigen() == null) {
                     throw new BadRequestException("Para SALIDA se requiere bodega de origen.");
                 }
@@ -107,7 +121,6 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                 producto.setStock(producto.getStock() - detalle.getCantidad());
 
             } else if (movimiento.getTipoMovimiento() == TipoMovimiento.TRANSFERENCIA) {
-                // TRANSFERENCIA: disminuir de origen, aumentar en destino (global se mantiene)
                 if (movimiento.getBodegaOrigen() == null || movimiento.getBodegaDestino() == null) {
                     throw new BadRequestException("Para TRANSFERENCIA se requieren bodega origen y destino.");
                 }
@@ -137,14 +150,15 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
 
                 invDestino.setStock(invDestino.getStock() + detalle.getCantidad());
                 inventarioBodegaRepository.save(invDestino);
-                // Stock global no cambia en transferencia (solo cambia de ubicación)
             }
 
             productoRepository.save(producto);
             detalle.setProducto(producto);
         }
 
-        return movimientoRepository.save(movimiento);
+        MovimientoInventario saved = movimientoRepository.save(movimiento);
+        guardarAuditoria(saved);
+        return saved;
     }
 
     private void validarBodegasYTipo(MovimientoInventario m) {
@@ -200,5 +214,40 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
     @Override
     public List<MovimientoInventario> buscarPorBodega(Long bodegaId) {
         return movimientoRepository.findByBodegaId(bodegaId);
+    }
+
+    private void guardarAuditoria(MovimientoInventario movimiento) {
+        try {
+            String username = UserContext.getUsername();
+            if (username == null) {
+                log.warn("No se pudo obtener usuario autenticado para auditoría de Movimiento");
+                return;
+            }
+
+            Usuario usuario = usuarioRepository.findByUsername(username).orElse(null);
+
+            Auditoria audit = Auditoria.builder()
+                    .tipoOperacion(TipoOperacion.INSERT)
+                    .fechaHora(LocalDateTime.now())
+                    .usuario(usuario)
+                    .entidadAfectada("MovimientoInventario")
+                    .entidadId(movimiento.getId())
+                    .valoresAnteriores(null)
+                    .valoresNuevos(serializar(movimiento))
+                    .build();
+
+            auditoriaRepository.save(audit);
+            log.info("Auditoría guardada: INSERT en MovimientoInventario id={}", movimiento.getId());
+        } catch (Exception e) {
+            log.error("Error guardando auditoría para MovimientoInventario: {}", e.getMessage(), e);
+        }
+    }
+
+    private String serializar(Object entity) {
+        try {
+            return objectMapper.writeValueAsString(entity);
+        } catch (Exception e) {
+            return entity.toString();
+        }
     }
 }
