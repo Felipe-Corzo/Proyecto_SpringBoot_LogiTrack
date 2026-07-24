@@ -1,91 +1,108 @@
 package com.logitrack.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.logitrack.config.SpringContext;
+import com.logitrack.config.UserContext;
 import com.logitrack.model.Auditoria;
 import com.logitrack.model.TipoOperacion;
-import com.logitrack.model.Usuario;
-import com.logitrack.repository.AuditoriaRepository;
-import com.logitrack.repository.UsuarioRepository;
 import jakarta.persistence.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
-import java.time.LocalDateTime;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
-@Component
 public class AuditEntityListener {
 
-    private static AuditoriaRepository auditoriaRepository;
-    private static UsuarioRepository usuarioRepository;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(AuditEntityListener.class);
 
-    @Autowired
-    public void init(@Lazy AuditoriaRepository auditRepo, @Lazy UsuarioRepository userRepo) {
-        AuditEntityListener.auditoriaRepository = auditRepo;
-        AuditEntityListener.usuarioRepository = userRepo;
+    // Creado a mano (no inyectado por Spring) para evitar el problema de orden
+    // de arranque: Hibernate instancia este listener ANTES de que Spring termine
+    // de registrar el bean ObjectMapper. Le agregamos JavaTimeModule manualmente
+    // para que serialice bien los LocalDateTime.
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    private static final ThreadLocal<Map<Object, String>> snapshots =
+            ThreadLocal.withInitial(IdentityHashMap::new);
+
+    @PostLoad
+    public void onPostLoad(Object entity) {
+        if (entity instanceof Auditoria) return;
+        snapshots.get().put(entity, serializar(entity));
     }
 
     @PostPersist
     public void onPostPersist(Object entity) {
-        registrarAuditoria(TipoOperacion.INSERT, entity, null, serializar(entity));
+        publicarEvento(TipoOperacion.INSERT, entity, null, serializar(entity));
     }
 
     @PostUpdate
     public void onPostUpdate(Object entity) {
-        registrarAuditoria(TipoOperacion.UPDATE, entity, null, serializar(entity));
+        String anterior = snapshots.get().remove(entity);
+        publicarEvento(TipoOperacion.UPDATE, entity, anterior, serializar(entity));
     }
 
     @PostRemove
     public void onPostRemove(Object entity) {
-        registrarAuditoria(TipoOperacion.DELETE, entity, serializar(entity), null);
+        String anterior = snapshots.get().remove(entity);
+        publicarEvento(TipoOperacion.DELETE, entity, anterior != null ? anterior : serializar(entity), null);
     }
 
-    private void registrarAuditoria(TipoOperacion tipo, Object entity, String valoresAnteriores, String valoresNuevos) {
-        if (auditoriaRepository == null || entity instanceof Auditoria) {
+    private void publicarEvento(TipoOperacion tipo, Object entity, String valoresAnteriores, String valoresNuevos) {
+        if (entity instanceof Auditoria) {
             return;
         }
 
         try {
-            Long entityId = obtenerIdEntidad(entity);
-            Usuario usuario = obtenerUsuarioAutenticado();
+            // Obtener el ApplicationEventPublisher desde SpringContext,
+            // ya que Hibernate instancia este listener fuera del contenedor de Spring.
+            ApplicationEventPublisher eventPublisher = SpringContext.getBean(ApplicationEventPublisher.class);
+            if (eventPublisher == null) {
+                log.warn("AuditEntityListener: ApplicationEventPublisher no disponible aún (Spring inicializando). " +
+                        "Entidad: {}, Operación: {}", entity.getClass().getSimpleName(), tipo);
+                return;
+            }
 
-            Auditoria audit = Auditoria.builder()
-                    .tipoOperacion(tipo)
-                    .fechaHora(LocalDateTime.now())
-                    .usuario(usuario)
-                    .entidadAfectada(entity.getClass().getSimpleName())
-                    .entidadId(entityId)
-                    .valoresAnteriores(valoresAnteriores)
-                    .valoresNuevos(valoresNuevos)
-                    .build();
-
-            auditoriaRepository.save(audit);
+            Long entidadId = obtenerIdEntidad(entity);
+            String username = obtenerUsernameAutenticado();
+            eventPublisher.publishEvent(new AuditoriaEvent(
+                    tipo, entity.getClass().getSimpleName(), entidadId, valoresAnteriores, valoresNuevos, username));
         } catch (Exception e) {
-            // Silencioso para evitar romper transacciones de entidades primarias
+            log.error("AuditEntityListener: Error al publicar evento de auditoría para entidad {} - {}: {}",
+                    entity.getClass().getSimpleName(), tipo, e.getMessage(), e);
         }
     }
 
-    /**
-     * Obtiene el usuario autenticado desde el SecurityContextHolder.
-     * Si no hay usuario autenticado, retorna null (se guarda como "Sistema" en frontend).
-     */
-    private Usuario obtenerUsuarioAutenticado() {
+    private String obtenerUsernameAutenticado() {
+        // 1. Intentar obtener el usuario desde UserContext (ThreadLocal).
+        //    JwtAuthenticationFilter lo establece al inicio del request,
+        //    por lo que está disponible incluso en listeners JPA que
+        //    se ejecutan en el mismo hilo de la petición HTTP.
+        String usernameFromContext = UserContext.getUsername();
+        if (usernameFromContext != null) {
+            return usernameFromContext;
+        }
+
+        // 2. Fallback: SecurityContextHolder (puede no estar disponible
+        //    si el listener se ejecuta fuera del hilo de la petición).
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.isAuthenticated()
                     && !"anonymousUser".equals(authentication.getPrincipal())) {
-                String username = authentication.getName();
-                if (username != null && usuarioRepository != null) {
-                    return usuarioRepository.findByUsername(username).orElse(null);
-                }
+                return authentication.getName();
             }
         } catch (Exception e) {
-            // Silencioso: si falla obtener el usuario, se registra sin él
+            log.debug("AuditEntityListener: No se pudo obtener el usuario de SecurityContextHolder", e);
         }
+
         return null;
     }
 

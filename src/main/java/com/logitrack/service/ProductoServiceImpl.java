@@ -1,16 +1,28 @@
 package com.logitrack.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.logitrack.config.UserContext;
 import com.logitrack.dto.ProductoConInventarioDTO;
 import com.logitrack.exception.ResourceNotFoundException;
+import com.logitrack.model.Auditoria;
 import com.logitrack.model.Bodega;
 import com.logitrack.model.InventarioBodega;
 import com.logitrack.model.Producto;
+import com.logitrack.model.TipoOperacion;
+import com.logitrack.model.Usuario;
+import com.logitrack.repository.AuditoriaRepository;
 import com.logitrack.repository.BodegaRepository;
 import com.logitrack.repository.InventarioBodegaRepository;
 import com.logitrack.repository.ProductoRepository;
+import com.logitrack.repository.UsuarioRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,16 +30,28 @@ import java.util.stream.Collectors;
 @Service
 public class ProductoServiceImpl implements ProductoService {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductoServiceImpl.class);
+
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
     private final ProductoRepository productoRepository;
     private final InventarioBodegaRepository inventarioBodegaRepository;
     private final BodegaRepository bodegaRepository;
+    private final AuditoriaRepository auditoriaRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public ProductoServiceImpl(ProductoRepository productoRepository,
                                 InventarioBodegaRepository inventarioBodegaRepository,
-                                BodegaRepository bodegaRepository) {
+                                BodegaRepository bodegaRepository,
+                                AuditoriaRepository auditoriaRepository,
+                                UsuarioRepository usuarioRepository) {
         this.productoRepository = productoRepository;
         this.inventarioBodegaRepository = inventarioBodegaRepository;
         this.bodegaRepository = bodegaRepository;
+        this.auditoriaRepository = auditoriaRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Override
@@ -45,7 +69,9 @@ public class ProductoServiceImpl implements ProductoService {
     @Transactional
     public Producto guardar(Producto producto) {
         producto.setStock(0);
-        return productoRepository.save(producto);
+        Producto saved = productoRepository.save(producto);
+        guardarAuditoria(TipoOperacion.INSERT, saved, null, serializar(saved));
+        return saved;
     }
 
     @Override
@@ -77,25 +103,31 @@ public class ProductoServiceImpl implements ProductoService {
         }
 
         saved.setStock(stockTotal);
-        return productoRepository.save(saved);
+        Producto updated = productoRepository.save(saved);
+        guardarAuditoria(TipoOperacion.INSERT, updated, null, serializar(updated));
+        return updated;
     }
 
     @Override
     @Transactional
     public Producto actualizar(Long id, Producto producto) {
         Producto productoExistente = obtenerPorId(id);
+        String valoresAnteriores = serializar(productoExistente);
 
         productoExistente.setNombre(producto.getNombre());
         productoExistente.setCategoria(producto.getCategoria());
         productoExistente.setPrecio(producto.getPrecio());
 
-        return productoRepository.save(productoExistente);
+        Producto saved = productoRepository.save(productoExistente);
+        guardarAuditoria(TipoOperacion.UPDATE, saved, valoresAnteriores, serializar(saved));
+        return saved;
     }
 
     @Override
     @Transactional
     public Producto actualizarConInventario(Long id, Producto producto, Map<Long, Integer> stockPorBodega) {
         Producto productoExistente = obtenerPorId(id);
+        String valoresAnteriores = serializar(productoExistente);
 
         productoExistente.setNombre(producto.getNombre());
         productoExistente.setCategoria(producto.getCategoria());
@@ -129,14 +161,18 @@ public class ProductoServiceImpl implements ProductoService {
         }
 
         productoExistente.setStock(stockTotal);
-        return productoRepository.save(productoExistente);
+        Producto saved = productoRepository.save(productoExistente);
+        guardarAuditoria(TipoOperacion.UPDATE, saved, valoresAnteriores, serializar(saved));
+        return saved;
     }
 
     @Override
     @Transactional
     public void eliminar(Long id) {
         Producto producto = obtenerPorId(id);
+        String valoresAnteriores = serializar(producto);
         productoRepository.delete(producto);
+        guardarAuditoria(TipoOperacion.DELETE, producto, valoresAnteriores, null);
     }
 
     @Override
@@ -178,5 +214,40 @@ public class ProductoServiceImpl implements ProductoService {
         Producto producto = obtenerPorId(id);
         List<InventarioBodega> inventarios = inventarioBodegaRepository.findByProductoId(id);
         return ProductoConInventarioDTO.fromProducto(producto, inventarios);
+    }
+
+    private void guardarAuditoria(TipoOperacion tipo, Producto producto, String valoresAnteriores, String valoresNuevos) {
+        try {
+            String username = UserContext.getUsername();
+            if (username == null) {
+                log.warn("No se pudo obtener usuario autenticado para auditoría de Producto");
+                return;
+            }
+
+            Usuario usuario = usuarioRepository.findByUsername(username).orElse(null);
+
+            Auditoria audit = Auditoria.builder()
+                    .tipoOperacion(tipo)
+                    .fechaHora(LocalDateTime.now())
+                    .usuario(usuario)
+                    .entidadAfectada("Producto")
+                    .entidadId(producto.getId())
+                    .valoresAnteriores(valoresAnteriores)
+                    .valoresNuevos(valoresNuevos)
+                    .build();
+
+            auditoriaRepository.save(audit);
+            log.info("Auditoría guardada: {} en Producto id={}", tipo, producto.getId());
+        } catch (Exception e) {
+            log.error("Error guardando auditoría para Producto: {}", e.getMessage(), e);
+        }
+    }
+
+    private String serializar(Object entity) {
+        try {
+            return objectMapper.writeValueAsString(entity);
+        } catch (Exception e) {
+            return entity.toString();
+        }
     }
 }

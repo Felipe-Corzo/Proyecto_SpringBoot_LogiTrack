@@ -70,7 +70,9 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 // Recursos estáticos HTML/JS/CSS y endpoints públicos
-                .requestMatchers("/", "/index.html", "/login", "/favicon.ico", "/html/**", "/css/**", "/js/**", "/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/", "/index.html", "/login", "/favicon.ico", "/html/**", "/css/**", "/js/**", "/api/auth/login", "/api/auth/register", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                // Registro de empleados restringido exclusivamente a ADMIN
+                .requestMatchers(HttpMethod.POST, "/api/auth/register-empleado").hasRole("ADMIN")
                 // Módulo de Auditoría restringido exclusivamente a ADMIN
                 .requestMatchers("/api/auditorias/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/bodegas/**", "/api/productos/**").hasRole("ADMIN")

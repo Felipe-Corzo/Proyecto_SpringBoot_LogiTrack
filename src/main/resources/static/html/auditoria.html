@@ -155,15 +155,12 @@
             </table>
           </div>
 
-          <div class="pagination">
-            <span class="pagination__info">Mostrando registros</span>
-            <div class="pagination__controls">
-              <button class="pagination__btn" type="button" disabled>Ant</button>
-              <button class="pagination__btn is-active" type="button">1</button>
-              <button class="pagination__btn" type="button">2</button>
-              <button class="pagination__btn" type="button">3</button>
-              <span class="pagination__ellipsis">…</span>
-              <button class="pagination__btn" type="button">Sig</button>
+          <div class="pagination" id="auditorias-pagination">
+            <span class="pagination__info" id="auditorias-pagination-info">Cargando...</span>
+            <div class="pagination__controls" id="auditorias-pagination-controls">
+              <button class="pagination__btn" type="button" id="auditorias-prev-btn" disabled><span class="material-symbols-outlined icon-sm">chevron_left</span></button>
+              <div id="auditorias-page-numbers" style="display:flex;align-items:center;gap:0.25rem;"></div>
+              <button class="pagination__btn" type="button" id="auditorias-next-btn" disabled><span class="material-symbols-outlined icon-sm">chevron_right</span></button>
             </div>
           </div>
         </div>

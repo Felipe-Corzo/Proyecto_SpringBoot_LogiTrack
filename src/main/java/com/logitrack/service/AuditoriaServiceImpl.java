@@ -2,6 +2,7 @@ package com.logitrack.service;
 
 import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.Auditoria;
+import com.logitrack.model.TipoOperacion;
 import com.logitrack.repository.AuditoriaRepository;
 import org.springframework.stereotype.Service;
 
@@ -30,5 +31,15 @@ public class AuditoriaServiceImpl implements AuditoriaService {
     @Override
     public List<Auditoria> buscarPorEntidad(String entidad) {
         return auditoriaRepository.findByEntidadAfectadaIgnoreCase(entidad);
+    }
+
+    @Override
+    public List<Auditoria> buscarPorUsuario(Long usuarioId) {
+        return auditoriaRepository.findByUsuario_Id(usuarioId);
+    }
+
+    @Override
+    public List<Auditoria> buscarPorTipoOperacion(TipoOperacion tipo) {
+        return auditoriaRepository.findByTipoOperacion(tipo);
     }
 }
