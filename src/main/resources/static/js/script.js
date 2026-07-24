@@ -503,8 +503,9 @@ function abrirModalBodega(mode, data) {
 function abrirProductoModal(mode, data) {
   const form = document.getElementById('product-form');
   form.reset();
+  const isEdit = mode === 'edit';
   document.getElementById('product-modal-title').textContent =
-    mode === 'edit' ? 'Editar Producto' : 'Nuevo Producto';
+    isEdit ? 'Editar Producto' : 'Nuevo Producto';
   if (data) {
     form.elements.nombre.value = data.name || '';
     form.elements.categoria.value = data.category || '';
@@ -513,13 +514,15 @@ function abrirProductoModal(mode, data) {
   document.getElementById('product-modal-backdrop')?.classList.add('is-open');
 
   // Cargar bodegas para distribucion de stock
-  cargarBodegasParaDistribucion(mode === 'edit' ? data?.id : null);
+  // En edicion: readonly=true para deshabilitar los campos de stock
+  cargarBodegasParaDistribucion(isEdit ? data?.id : null, isEdit);
 }
 
 
 
-async function cargarBodegasParaDistribucion(productoId) {
+async function cargarBodegasParaDistribucion(productoId, readonly) {
     const container = document.getElementById('stock-distribucion-container');
+    const totalInput = document.getElementById('product-stock-total');
     if (!container) return;
 
     try {
@@ -534,24 +537,40 @@ async function cargarBodegasParaDistribucion(productoId) {
             } catch(e) { /* ignorar */ }
         }
 
-        container.innerHTML = bodegas.map(b => {
+        // En modo edicion, los campos de stock se muestran como readonly
+        const disabledAttr = readonly ? 'disabled' : '';
+        const readonlyClass = readonly ? ' stock-input--readonly' : '';
+
+        // Mostrar mensaje si es edicion
+        if (readonly) {
+            container.innerHTML = `
+                <div class="form-help-text" style="margin-bottom: 12px; padding: 8px 12px; background: #fef9e7; border-radius: 6px; border-left: 3px solid #f0ad4e;">
+                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">info</span>
+                    El stock solo se asigna al crear el producto. Para modificarlo, use los movimientos de inventario.
+                </div>
+            `;
+        }
+
+        container.innerHTML += bodegas.map(b => {
             const inv = inventarios.find(i => Number(i.bodegaId) === Number(b.id));
             const cantidad = inv ? inv.stockTotal : 0;
             return `
                 <div class="form-grid-2" style="margin-bottom: 8px; align-items: center;">
                     <label class="form-label" style="margin:0; font-weight:500;">${b.nombre}</label>
-                    <input class="form-input form-input--mono stock-bodega-input" 
+                    <input class="form-input form-input--mono stock-bodega-input${readonlyClass}" 
                            type="number" min="0" value="${cantidad}" 
                            data-bodega-id="${b.id}" data-bodega-nombre="${b.nombre}"
-                           placeholder="Stock en ${b.nombre}">
+                           placeholder="Stock en ${b.nombre}" ${disabledAttr}>
                 </div>
             `;
         }).join('');
 
-        // Calcular stock total automáticamente
-        container.querySelectorAll('.stock-bodega-input').forEach(input => {
-            input.addEventListener('input', calcularStockTotalDistribucion);
-        });
+        // En creacion, calcular stock total automaticamente
+        if (!readonly) {
+            container.querySelectorAll('.stock-bodega-input').forEach(input => {
+                input.addEventListener('input', calcularStockTotalDistribucion);
+            });
+        }
         calcularStockTotalDistribucion();
 
     } catch (err) {
@@ -757,22 +776,22 @@ document.getElementById('product-form')?.addEventListener('submit', async (event
     precio: Number(form.elements.precio.value),
   };
 
-  // Obtener distribucion de stock por bodega
-  const stockPorBodega = {};
-  document.querySelectorAll('.stock-bodega-input').forEach(input => {
-    const cantidad = Number(input.value) || 0;
-    if (cantidad > 0) {
-      stockPorBodega[input.dataset.bodegaId] = cantidad;
-    }
-  });
-
   try {
     if (productoIdEditando) {
-      await apiFetch(`/api/productos/${productoIdEditando}/con-inventario`, {
+      // En edicion solo se envian nombre, categoria y precio (sin stock)
+      await apiFetch(`/api/productos/${productoIdEditando}`, {
         method: 'PUT',
-        body: JSON.stringify({ producto: payload, stockPorBodega })
+        body: JSON.stringify(payload)
       });
     } else {
+      // En creacion se envia producto + distribucion de stock por bodega
+      const stockPorBodega = {};
+      document.querySelectorAll('.stock-bodega-input').forEach(input => {
+        const cantidad = Number(input.value) || 0;
+        if (cantidad > 0) {
+          stockPorBodega[input.dataset.bodegaId] = cantidad;
+        }
+      });
       await apiFetch('/api/productos/con-inventario', {
         method: 'POST',
         body: JSON.stringify({ producto: payload, stockPorBodega })

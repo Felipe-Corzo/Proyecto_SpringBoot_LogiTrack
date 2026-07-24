@@ -65,8 +65,25 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
             Producto producto = productoRepository.findById(detalle.getProducto().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto", "id", detalle.getProducto().getId()));
 
-            if (movimiento.getTipoMovimiento() == TipoMovimiento.SALIDA) {
-                // SALIDA: disminuir stock de bodega_origen
+            if (movimiento.getTipoMovimiento() == TipoMovimiento.ENTRADA) {
+                // ENTRADA: aumentar stock en bodega_destino y global
+                if (movimiento.getBodegaDestino() == null) {
+                    throw new BadRequestException("Para ENTRADA se requiere bodega de destino.");
+                }
+                InventarioBodega invDestino = inventarioBodegaRepository
+                        .findByProductoIdAndBodegaId(producto.getId(), movimiento.getBodegaDestino().getId())
+                        .orElseGet(() -> InventarioBodega.builder()
+                                .producto(producto)
+                                .bodega(movimiento.getBodegaDestino())
+                                .stock(0)
+                                .build());
+
+                invDestino.setStock(invDestino.getStock() + detalle.getCantidad());
+                inventarioBodegaRepository.save(invDestino);
+                producto.setStock(producto.getStock() + detalle.getCantidad());
+
+            } else if (movimiento.getTipoMovimiento() == TipoMovimiento.SALIDA) {
+                // SALIDA: disminuir stock de bodega_origen y global
                 if (movimiento.getBodegaOrigen() == null) {
                     throw new BadRequestException("Para SALIDA se requiere bodega de origen.");
                 }
@@ -87,25 +104,8 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                 inventarioBodegaRepository.save(invOrigen);
                 producto.setStock(producto.getStock() - detalle.getCantidad());
 
-            } else if (movimiento.getTipoMovimiento() == TipoMovimiento.ENTRADA) {
-                // ENTRADA: aumentar stock de bodega_destino
-                if (movimiento.getBodegaDestino() == null) {
-                    throw new BadRequestException("Para ENTRADA se requiere bodega de destino.");
-                }
-                InventarioBodega invDestino = inventarioBodegaRepository
-                        .findByProductoIdAndBodegaId(producto.getId(), movimiento.getBodegaDestino().getId())
-                        .orElseGet(() -> InventarioBodega.builder()
-                                .producto(producto)
-                                .bodega(movimiento.getBodegaDestino())
-                                .stock(0)
-                                .build());
-
-                invDestino.setStock(invDestino.getStock() + detalle.getCantidad());
-                inventarioBodegaRepository.save(invDestino);
-                producto.setStock(producto.getStock() + detalle.getCantidad());
-
             } else if (movimiento.getTipoMovimiento() == TipoMovimiento.TRANSFERENCIA) {
-                // TRANSFERENCIA: disminuir de origen, aumentar en destino
+                // TRANSFERENCIA: disminuir de origen, aumentar en destino (global se mantiene)
                 if (movimiento.getBodegaOrigen() == null || movimiento.getBodegaDestino() == null) {
                     throw new BadRequestException("Para TRANSFERENCIA se requieren bodega origen y destino.");
                 }
@@ -135,6 +135,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
 
                 invDestino.setStock(invDestino.getStock() + detalle.getCantidad());
                 inventarioBodegaRepository.save(invDestino);
+                // Stock global no cambia en transferencia (solo cambia de ubicación)
             }
 
             productoRepository.save(producto);
