@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDashboardWidgets();
   initModalDismissButtons();
   initGlobalHeaderEvents();
+  initRegistroEmpleadoModal();
 });
 
 function initGlobalHeaderEvents() {
@@ -387,6 +388,7 @@ function initDashboardWidgets() {
    Bodegas (listado + modal crear/editar + modal eliminar + búsqueda)
    ============================================================================ */
 let todasLasBodegas = [];
+let bodegasPaginacion = null;
 
 async function cargarBodegas() {
   const tbody = document.getElementById('bodegas-tbody');
@@ -395,11 +397,24 @@ async function cargarBodegas() {
 
   try {
     todasLasBodegas = await apiFetch('/api/bodegas');
-    renderBodegas(todasLasBodegas);
+    iniciarPaginacionBodegas(todasLasBodegas);
     initBusquedaBodegas();
   } catch (err) {
     console.error('Error cargando bodegas:', err);
   }
+}
+
+function iniciarPaginacionBodegas(datos) {
+  if (bodegasPaginacion) bodegasPaginacion = null;
+  bodegasPaginacion = initPaginacion({
+    data: datos,
+    pageSize: 5,
+    renderFn: (slice) => renderBodegas(slice),
+    infoId: 'bodegas-pagination-info',
+    prevBtnId: 'bodegas-prev-btn',
+    nextBtnId: 'bodegas-next-btn',
+    pageNumbersId: 'bodegas-page-numbers',
+  });
 }
 
 function renderBodegas(bodegas) {
@@ -443,7 +458,7 @@ function initBusquedaBodegas() {
         const enc = (b.encargado?.username || '').toLowerCase();
         return idStr.includes(q) || nom.includes(q) || ubi.includes(q) || enc.includes(q);
       });
-      renderBodegas(filtradas);
+      iniciarPaginacionBodegas(filtradas);
     });
   });
 }
@@ -630,6 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
    Productos (listado + filtros combinados + modal crear/editar + eliminar)
    ============================================================================ */
 let todosLosProductos = [];
+let productosPaginacion = null;
 
 async function cargarProductos() {
   const tbody = document.querySelector('#products-table tbody');
@@ -645,34 +661,19 @@ async function cargarProductos() {
 
   try {
     todosLosProductos = await apiFetch('/api/productos');
-    pobladorCategorias();
-    filtrarYRenderizarProductos();
+    iniciarPaginacionProductos();
     initEventosFiltroProductos();
   } catch (err) {
     console.error('Error cargando productos:', err);
   }
 }
 
-function pobladorCategorias() {
-  const categorySelect = document.getElementById('product-category-filter');
-  if (!categorySelect) return;
-
-  const categoriasUnicas = Array.from(new Set(
-    todosLosProductos.map((p) => p.categoria).filter(Boolean)
-  ));
-
-  const actualVal = categorySelect.value;
-  categorySelect.innerHTML = '<option value="">Todas las categorías</option>' +
-    categoriasUnicas.map((cat) => `<option value="${cat}">${cat}</option>`).join('');
-
-  if (actualVal) categorySelect.value = actualVal;
-}
-
-function filtrarYRenderizarProductos() {
+function iniciarPaginacionProductos() {
   const tbody = document.querySelector('#products-table tbody');
   const emptyState = document.getElementById('products-empty-state');
   if (!tbody) return;
 
+  // Obtener datos filtrados
   const searchInputDesktop = document.getElementById('product-search-desktop');
   const searchInputMobile = document.getElementById('product-search-mobile');
   const categorySelect = document.getElementById('product-category-filter');
@@ -686,23 +687,47 @@ function filtrarYRenderizarProductos() {
     const pIdStr = `prd-${p.id}`.toLowerCase();
     const pNombre = (p.nombre || '').toLowerCase();
     const pCat = (p.categoria || '').toLowerCase();
-
     const coincideBusqueda = !query || pIdStr.includes(query) || pNombre.includes(query) || pCat.includes(query);
     const coincideCategoria = !categoria || pCat === categoria;
     const coincideStockBajo = !soloStockBajo || p.stock < 10;
-
     return coincideBusqueda && coincideCategoria && coincideStockBajo;
   });
 
   if (filtrados.length === 0) {
     tbody.innerHTML = '';
     if (emptyState) emptyState.style.display = 'block';
+    // Ocultar paginación
+    const pagination = document.getElementById('productos-pagination');
+    if (pagination) pagination.style.display = 'none';
     return;
   }
 
   if (emptyState) emptyState.style.display = 'none';
+  const pagination = document.getElementById('productos-pagination');
+  if (pagination) pagination.style.display = '';
 
-  tbody.innerHTML = filtrados.map((p) => `
+  if (productosPaginacion) productosPaginacion = null;
+  productosPaginacion = initPaginacion({
+    data: filtrados,
+    pageSize: 5,
+    renderFn: (slice) => renderProductos(slice),
+    infoId: 'productos-pagination-info',
+    prevBtnId: 'productos-prev-btn',
+    nextBtnId: 'productos-next-btn',
+    pageNumbersId: 'productos-page-numbers',
+  });
+}
+
+function renderProductos(productos) {
+  const tbody = document.querySelector('#products-table tbody');
+  if (!tbody) return;
+
+  if (productos.length === 0) {
+    tbody.innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = productos.map((p) => `
     <tr data-id="${p.id}" data-name="${p.nombre}" data-category="${p.categoria ?? ''}"
         data-stock="${p.stock}" data-price="${p.precio}" class="${p.stock < 10 ? 'is-low-stock' : ''}">
       <td class="metric-cell__value">PRD-${p.id}</td>
@@ -729,7 +754,7 @@ function initEventosFiltroProductos() {
   const catSelect = document.getElementById('product-category-filter');
   const lowStockCheck = document.getElementById('product-low-stock-filter');
 
-  const handler = () => filtrarYRenderizarProductos();
+  const handler = () => iniciarPaginacionProductos();
 
   searchDesktop?.addEventListener('input', handler);
   searchMobile?.addEventListener('input', handler);
@@ -746,7 +771,7 @@ function adjuntarEventosFilasProducto() {
         await apiFetch(`/api/productos/${row.dataset.id}`, { method: 'DELETE' });
         row.remove();
         todosLosProductos = todosLosProductos.filter((p) => p.id != row.dataset.id);
-        filtrarYRenderizarProductos();
+        iniciarPaginacionProductos();
       } catch (err) {
         alert(err.message);
       }
@@ -811,6 +836,7 @@ document.addEventListener('DOMContentLoaded', cargarProductos);
    Movimientos (Historial + Filtros)
    ============================================================================ */
 let todosLosMovimientos = [];
+let movimientosPaginacion = null;
 
 async function cargarMovimientos() {
   const tbody = document.getElementById('movimientos-tbody');
@@ -820,7 +846,7 @@ async function cargarMovimientos() {
   try {
     todosLosMovimientos = await apiFetch('/api/movimientos');
     await cargarBodegasParaFiltroMovimientos();
-    filtrarYRenderizarMovimientos();
+    iniciarPaginacionMovimientos();
     initEventosFiltroMovimientos();
   } catch (err) {
     console.error('Error cargando movimientos:', err);
@@ -840,16 +866,13 @@ async function cargarBodegasParaFiltroMovimientos() {
   }
 }
 
-function filtrarYRenderizarMovimientos() {
-  const tbody = document.getElementById('movimientos-tbody');
-  if (!tbody) return;
-
+function obtenerMovimientosFiltrados() {
   const fechaDesde = document.getElementById('mov-fecha-desde')?.value;
   const fechaHasta = document.getElementById('mov-fecha-hasta')?.value;
   const tipo = document.getElementById('mov-tipo')?.value;
   const bodegaId = document.getElementById('mov-bodega')?.value;
 
-  const filtrados = todosLosMovimientos.filter((m) => {
+  return todosLosMovimientos.filter((m) => {
     let coincideFecha = true;
     if (fechaDesde) {
       coincideFecha = coincideFecha && new Date(m.fecha) >= new Date(`${fechaDesde}T00:00:00`);
@@ -865,13 +888,46 @@ function filtrarYRenderizarMovimientos() {
 
     return coincideFecha && coincideTipo && coincideBodega;
   });
+}
+
+function iniciarPaginacionMovimientos() {
+  const tbody = document.getElementById('movimientos-tbody');
+  if (!tbody) return;
+
+  const filtrados = obtenerMovimientosFiltrados();
 
   if (filtrados.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" class="is-center cell-muted" style="padding: 2rem;">No se encontraron movimientos con los filtros seleccionados.</td></tr>`;
+    const pagination = document.getElementById('movimientos-pagination');
+    if (pagination) pagination.style.display = 'none';
     return;
   }
 
-  tbody.innerHTML = filtrados.map((m) => `
+  const pagination = document.getElementById('movimientos-pagination');
+  if (pagination) pagination.style.display = '';
+
+  if (movimientosPaginacion) movimientosPaginacion = null;
+  movimientosPaginacion = initPaginacion({
+    data: filtrados,
+    pageSize: 5,
+    renderFn: (slice) => renderMovimientos(slice),
+    infoId: 'movimientos-pagination-info',
+    prevBtnId: 'movimientos-prev-btn',
+    nextBtnId: 'movimientos-next-btn',
+    pageNumbersId: 'movimientos-page-numbers',
+  });
+}
+
+function renderMovimientos(movimientos) {
+  const tbody = document.getElementById('movimientos-tbody');
+  if (!tbody) return;
+
+  if (movimientos.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="is-center cell-muted" style="padding: 2rem;">No se encontraron movimientos.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = movimientos.map((m) => `
     <tr>
       <td class="cell-muted">${new Date(m.fecha).toLocaleString('es-CO')}</td>
       <td><span class="status-badge ${badgeClasePorTipo(m.tipoMovimiento)}">${m.tipoMovimiento}</span></td>
@@ -899,7 +955,7 @@ function initEventosFiltroMovimientos() {
         console.error('Error al consultar rango de fechas:', err);
       }
     }
-    filtrarYRenderizarMovimientos();
+    iniciarPaginacionMovimientos();
   };
 
   desde?.addEventListener('change', handler);
@@ -1079,51 +1135,8 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
   }
 });
 
-document.addEventListener('DOMContentLoaded', initNuevoMovimientoReal);
 
-/* ============================================================================
-   Auditoría de Cambios
-   ============================================================================ */
-let todasLasAuditorias = [];
 
-async function cargarAuditorias() {
-  const tbody = document.querySelector('#audit-table tbody');
-  if (!tbody) return;
-
-  protegerRuta();
-  protegerRutaAdmin();
-
-  try {
-    todasLasAuditorias = await apiFetch('/api/auditorias');
-    await cargarUsuariosParaFiltroAuditoria();
-    filtrarYRenderizarAuditorias();
-    initEventosFiltroAuditoria();
-  } catch (err) {
-    console.error('Error cargando auditorías:', err);
-  }
-}
-
-async function cargarUsuariosParaFiltroAuditoria() {
-  const select = document.getElementById('audit-user-filter');
-  if (!select) return;
-
-  try {
-    const usuarios = await apiFetch('/api/usuarios');
-    select.innerHTML = '<option value="">Todos los usuarios</option>' +
-      usuarios.map((u) => `<option value="${u.id}">${u.username}</option>`).join('');
-  } catch (err) {
-    console.error('Error cargando usuarios para auditoria:', err);
-  }
-}
-
-function filtrarYRenderizarAuditorias() {
-  const tbody = document.querySelector('#audit-table tbody');
-  if (!tbody) return;
-
-  const searchInput = document.getElementById('audit-search-input')?.value.toLowerCase().trim();
-  const userId = document.getElementById('audit-user-filter')?.value;
-  const opType = document.getElementById('audit-op-filter')?.value;
-  const entityType = document.getElementById('audit-entity-filter')?.value;
 
   const filtradas = todasLasAuditorias.filter((a) => {
     const userStr = (a.usuario?.username || 'Sistema').toLowerCase();
@@ -1235,6 +1248,169 @@ function badgeClasePorOperacion(tipo) {
 
 function formatearJson(raw) {
   try { return JSON.stringify(JSON.parse(raw), null, 2); } catch { return raw || '(vacio)'; }
+}
+
+/* ============================================================================
+   Paginación genérica cliente-side
+   ============================================================================ */
+function initPaginacion(config) {
+  const {
+    data,            // array completo de datos (ya filtrados)
+    pageSize,        // items por página
+    renderFn,        // función(dataSlice) que renderiza el tbody
+    infoId,          // id del span con la info "Mostrando X a Y de Z"
+    prevBtnId,       // id del botón anterior
+    nextBtnId,       // id del botón siguiente
+    pageNumbersId,   // id del div para números de página
+    onPageChange,    // callback(page) opcional
+  } = config;
+
+  let paginaActual = 1;
+  const totalPaginas = Math.max(1, Math.ceil(data.length / pageSize));
+
+  function actualizar() {
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    if (paginaActual < 1) paginaActual = 1;
+
+    const inicio = (paginaActual - 1) * pageSize;
+    const fin = Math.min(inicio + pageSize, data.length);
+    const slice = data.slice(inicio, fin);
+
+    renderFn(slice);
+
+    const infoEl = document.getElementById(infoId);
+    if (infoEl) {
+      infoEl.textContent = data.length === 0
+        ? 'Sin registros'
+        : `Mostrando ${inicio + 1} a ${fin} de ${data.length} registros`;
+    }
+
+    const prevBtn = document.getElementById(prevBtnId);
+    const nextBtn = document.getElementById(nextBtnId);
+    if (prevBtn) prevBtn.disabled = paginaActual <= 1;
+    if (nextBtn) nextBtn.disabled = paginaActual >= totalPaginas;
+
+    const container = document.getElementById(pageNumbersId);
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (totalPaginas <= 1) return;
+
+    function crearBtnPagina(num) {
+      const btn = document.createElement('button');
+      btn.className = `pagination__btn${num === paginaActual ? ' is-active' : ''}`;
+      btn.type = 'button';
+      btn.textContent = num;
+      btn.addEventListener('click', () => { paginaActual = num; actualizar(); if (onPageChange) onPageChange(paginaActual); });
+      return btn;
+    }
+
+    function crearEllipsis() {
+      const span = document.createElement('span');
+      span.className = 'pagination__ellipsis';
+      span.textContent = '…';
+      return span;
+    }
+
+    const maxVisible = 5;
+    let startPage = Math.max(1, paginaActual - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPaginas, startPage + maxVisible - 1);
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    if (startPage > 1) {
+      container.appendChild(crearBtnPagina(1));
+      if (startPage > 2) container.appendChild(crearEllipsis());
+    }
+    for (let i = startPage; i <= endPage; i++) container.appendChild(crearBtnPagina(i));
+    if (endPage < totalPaginas) {
+      if (endPage < totalPaginas - 1) container.appendChild(crearEllipsis());
+      container.appendChild(crearBtnPagina(totalPaginas));
+    }
+  }
+
+  document.getElementById(prevBtnId)?.addEventListener('click', () => {
+    if (paginaActual > 1) { paginaActual--; actualizar(); if (onPageChange) onPageChange(paginaActual); }
+  });
+  document.getElementById(nextBtnId)?.addEventListener('click', () => {
+    if (paginaActual < totalPaginas) { paginaActual++; actualizar(); if (onPageChange) onPageChange(paginaActual); }
+  });
+
+  actualizar();
+
+  return {
+    irAPagina: (n) => { paginaActual = n; actualizar(); },
+    reiniciar: () => { paginaActual = 1; actualizar(); },
+  };
+}
+
+/* ============================================================================
+   Registro de Empleados (Modal en Dashboard, solo ADMIN)
+   ============================================================================ */
+function initRegistroEmpleadoModal() {
+  const backdrop = document.getElementById('empleado-modal-backdrop');
+  const successBackdrop = document.getElementById('empleado-success-backdrop');
+  const form = document.getElementById('empleado-form');
+  const sidebarBtn = document.getElementById('sidebar-settings-btn');
+  const topbarBtn = document.getElementById('topbar-settings-btn');
+
+  // Si no estamos en dashboard.html (no existen los elementos), salir
+  if (!backdrop || !form) return;
+
+  const usuario = getUsuarioActual();
+
+  // Si el usuario NO es ADMIN, ocultar los botones de configuración
+  if (!usuario || usuario.rol !== 'ADMIN') {
+    if (sidebarBtn) sidebarBtn.style.display = 'none';
+    if (topbarBtn) topbarBtn.style.display = 'none';
+    return;
+  }
+
+  // Abrir modal al hacer clic en cualquiera de los botones de configuración
+  function abrirModal() {
+    form.reset();
+    backdrop.classList.add('is-open');
+  }
+
+  if (sidebarBtn) sidebarBtn.addEventListener('click', (e) => { e.preventDefault(); abrirModal(); });
+  if (topbarBtn) topbarBtn.addEventListener('click', abrirModal);
+
+  // Enviar formulario
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+
+    const submitBtn = document.getElementById('btn-registrar-empleado');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="btn-spinner" style="width:18px;height:18px;border-color:rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.7s linear infinite;"></span> Registrando...';
+
+    try {
+      await apiFetch('/api/auth/register-empleado', {
+        method: 'POST',
+        body: JSON.stringify({
+          username: form.elements.username.value.trim(),
+          email: form.elements.email.value.trim().toLowerCase(),
+          password: form.elements.password.value,
+        }),
+      });
+
+      // Cerrar modal de registro
+      backdrop.classList.remove('is-open');
+
+      // Mostrar modal de éxito
+      document.getElementById('empleado-success-name').textContent = form.elements.username.value.trim();
+      successBackdrop.classList.add('is-open');
+
+      form.reset();
+    } catch (err) {
+      alert('Error al registrar empleado: ' + err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', cargarAuditorias);

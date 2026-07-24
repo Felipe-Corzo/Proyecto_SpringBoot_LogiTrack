@@ -43,3 +43,12 @@ INSERT INTO auditorias (id, tipo_operacion, fecha_hora, usuario_id, entidad_afec
 (1, 'INSERT', CURRENT_TIMESTAMP, 1, 'Bodega', 1, NULL, '{"id": 1, "nombre": "Bodega Central Bogota", "capacidad": 50000}'),
 (2, 'INSERT', CURRENT_TIMESTAMP, 1, 'Producto', 1, NULL, '{"id": 1, "nombre": "Laptop Lenovo ThinkPad T14", "stock": 145}')
 ON CONFLICT (id) DO NOTHING;
+
+-- Distribución inicial de stock por bodega (coincide con productos.stock)
+INSERT INTO inventario_bodega (id, producto_id, bodega_id, stock) VALUES
+(1, 1, 1, 145),   -- Laptop en Bodega Central Bogota
+(2, 2, 2, 8),     -- Monitor en Centro Distribucion Medellin
+(3, 3, 1, 65),    -- Teclado en Bodega Central Bogota
+(4, 4, 3, 4),     -- Silla en Bodega Norte Cali
+(5, 5, 1, 200)    -- Disco Duro en Bodega Central Bogota
+ON CONFLICT (id) DO NOTHING;

@@ -57,10 +57,6 @@
         <span class="material-symbols-outlined icon-md">help</span>
         Ayuda
       </a>
-      <a class="sidebar__link" href="#">
-        <span class="material-symbols-outlined icon-md">settings</span>
-        Configuración
-      </a>
     </div>
   </aside>
 
@@ -83,9 +79,6 @@
         <button class="icon-btn" type="button" title="Notificaciones" aria-label="Notificaciones">
           <span class="material-symbols-outlined">notifications</span>
           <span class="icon-btn__dot"></span>
-        </button>
-        <button class="icon-btn" type="button" title="Configuración" aria-label="Configuración">
-          <span class="material-symbols-outlined">settings</span>
         </button>
         <div class="topbar__divider"></div>
         <button class="logout-btn" type="button">
@@ -160,13 +153,14 @@
             </div>
           </div>
 
-          <div class="pagination">
-            <span class="pagination__info">Mostrando 1 a 4 de 124 productos</span>
-            <div class="pagination__controls">
-              <button class="pagination__btn" type="button" disabled aria-label="Página anterior">
+          <div class="pagination" id="productos-pagination">
+            <span class="pagination__info" id="productos-pagination-info">Cargando...</span>
+            <div class="pagination__controls" id="productos-pagination-controls">
+              <button class="pagination__btn" type="button" id="productos-prev-btn" disabled aria-label="Página anterior">
                 <span class="material-symbols-outlined icon-sm">chevron_left</span>
               </button>
-              <button class="pagination__btn" type="button" aria-label="Página siguiente">
+              <div id="productos-page-numbers" style="display:flex;align-items:center;gap:0.25rem;"></div>
+              <button class="pagination__btn" type="button" id="productos-next-btn" disabled aria-label="Página siguiente">
                 <span class="material-symbols-outlined icon-sm">chevron_right</span>
               </button>
             </div>

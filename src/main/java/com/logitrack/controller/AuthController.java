@@ -2,12 +2,15 @@ package com.logitrack.controller;
 
 import com.logitrack.dto.AuthResponse;
 import com.logitrack.dto.LoginRequest;
+import com.logitrack.dto.RegisterEmpleadoRequest;
 import com.logitrack.dto.RegisterRequest;
 import com.logitrack.exception.BadRequestException;
+import com.logitrack.model.Rol;
 import com.logitrack.model.Usuario;
 import com.logitrack.repository.UsuarioRepository;
 import com.logitrack.security.JwtTokenProvider;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -93,5 +97,37 @@ public class AuthController {
         }
 
         return login(new LoginRequest(registerRequest.getUsername(), registerRequest.getPassword()));
+    }
+
+    @PostMapping("/register-empleado")
+    public ResponseEntity<Map<String, Object>> registerEmpleado(@Valid @RequestBody RegisterEmpleadoRequest request) {
+        if (usuarioRepository.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("El nombre de usuario ya está en uso.");
+        }
+
+        if (usuarioRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("El correo electrónico ya está registrado.");
+        }
+
+        Usuario usuario = Usuario.builder()
+                .username(request.getUsername().trim())
+                .email(request.getEmail().trim().toLowerCase())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .rol(Rol.EMPLEADO)
+                .build();
+
+        try {
+            usuarioRepository.save(usuario);
+        } catch (Exception e) {
+            throw new BadRequestException("Error al registrar el empleado: " + e.getMessage());
+        }
+
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("id", usuario.getId());
+        response.put("username", usuario.getUsername());
+        response.put("email", usuario.getEmail());
+        response.put("rol", usuario.getRol().name());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

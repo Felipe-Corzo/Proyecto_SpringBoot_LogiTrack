@@ -131,14 +131,12 @@
               <tbody id="movimientos-tbody"></tbody>
             </table>
           </div>
-          <div class="pagination">
-            <span class="pagination__info">Mostrando 1 a 3 de 1,024 movimientos</span>
-            <div class="pagination__controls">
-              <button class="pagination__btn" type="button" disabled><span class="material-symbols-outlined icon-sm">chevron_left</span></button>
-              <button class="pagination__btn is-active" type="button">1</button>
-              <button class="pagination__btn" type="button">2</button>
-              <span class="pagination__ellipsis">…</span>
-              <button class="pagination__btn" type="button"><span class="material-symbols-outlined icon-sm">chevron_right</span></button>
+          <div class="pagination" id="movimientos-pagination">
+            <span class="pagination__info" id="movimientos-pagination-info">Cargando...</span>
+            <div class="pagination__controls" id="movimientos-pagination-controls">
+              <button class="pagination__btn" type="button" id="movimientos-prev-btn" disabled><span class="material-symbols-outlined icon-sm">chevron_left</span></button>
+              <div id="movimientos-page-numbers" style="display:flex;align-items:center;gap:0.25rem;"></div>
+              <button class="pagination__btn" type="button" id="movimientos-next-btn" disabled><span class="material-symbols-outlined icon-sm">chevron_right</span></button>
             </div>
           </div>
         </div>

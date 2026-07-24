@@ -10,9 +10,9 @@ function getUsuarioActual() {
   return raw ? JSON.parse(raw) : null;
 }
 
-function guardarSesion({ token, usuarioId, username, rol }) {
+function guardarSesion({ token, userId, username, rol }) {
   localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify({ id: usuarioId, username, rol }));
+  localStorage.setItem(USER_KEY, JSON.stringify({ id: userId, username, rol }));
 }
 
 function cerrarSesion() {
@@ -32,7 +32,7 @@ async function apiFetch(path, options = {}) {
     // No debe cerrar sesion ni redirigir; debe dejar que el propio formulario
     // muestre su mensaje de error.
     if (response.status === 401) {
-      if (path === '/auth/login') {
+      if (path === '/api/auth/login') {
         const err = await response.json().catch(() => ({}));
         throw new Error(err.error || 'Usuario o contraseña incorrectos');
       }
