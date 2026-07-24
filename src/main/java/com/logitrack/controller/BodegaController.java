@@ -1,6 +1,7 @@
 package com.logitrack.controller;
 
 import com.logitrack.model.Bodega;
+import com.logitrack.model.InventarioBodega;
 import com.logitrack.service.BodegaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -43,6 +44,11 @@ public class BodegaController {
     @PutMapping("/{id}")
     public ResponseEntity<Bodega> actualizar(@PathVariable Long id, @Valid @RequestBody Bodega bodega) {
         return ResponseEntity.ok(bodegaService.actualizar(id, bodega));
+    }
+
+    @GetMapping("/{id}/inventario")
+    public ResponseEntity<List<InventarioBodega>> obtenerInventario(@PathVariable Long id) {
+        return ResponseEntity.ok(bodegaService.obtenerInventarioPorBodega(id));
     }
 
     @DeleteMapping("/{id}")

@@ -120,9 +120,10 @@
                   <th>Nombre</th>
                   <th>Ubicación</th>
                   <th class="is-right">Capacidad</th>
+                  <th class="is-right">Stock Total</th>
                   <th>Estado</th>
                   <th>Encargado</th>
-                  <th class="is-right">Acciones</th>
+                  <th class="is-center">Acciones</th>
                 </tr>
               </thead>
               <tbody id="bodegas-tbody"></tbody>
@@ -232,6 +233,56 @@
         <span class="material-symbols-outlined icon-sm">delete</span>
         Eliminar
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Inventario de Bodega -->
+<div class="modal-backdrop" id="inventario-modal-backdrop">
+  <div class="modal modal--lg" role="dialog" aria-modal="true" aria-labelledby="inventario-modal-title">
+    <div class="modal__header">
+      <h2 class="modal__title" id="inventario-modal-title">Inventario de Bodega</h2>
+      <button class="modal__close" type="button" aria-label="Cerrar" data-modal-dismiss>
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="info-badges-group" id="inventario-modal-info">
+        <span class="info-badge" id="inventario-bodega-nombre">
+          <span class="material-symbols-outlined icon-sm">inventory_2</span>
+          <span>Cargando...</span>
+        </span>
+        <span class="info-badge info-badge--accent" id="inventario-total-productos">
+          <span class="material-symbols-outlined icon-sm">package_2</span>
+          <span>0 productos</span>
+        </span>
+        <span class="info-badge info-badge--accent" id="inventario-stock-total">
+          <span class="material-symbols-outlined icon-sm">inventory</span>
+          <span>0 unidades</span>
+        </span>
+      </div>
+      <div class="table-card__scroll" style="max-height: 400px;">
+        <table class="data-table" id="inventario-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th class="is-right">Stock en Bodega</th>
+              <th class="is-right">Precio Unit.</th>
+              <th class="is-right">Valor Total</th>
+            </tr>
+          </thead>
+          <tbody id="inventario-tbody">
+            <tr>
+              <td colspan="6" class="is-center cell-muted">Cargando inventario...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="toolbar-btn toolbar-btn--primary" type="button" data-modal-dismiss>Cerrar</button>
     </div>
   </div>
 </div>

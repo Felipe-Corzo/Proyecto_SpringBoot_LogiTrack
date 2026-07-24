@@ -11,7 +11,9 @@ import com.logitrack.model.Bodega;
 import com.logitrack.model.TipoOperacion;
 import com.logitrack.model.Usuario;
 import com.logitrack.repository.AuditoriaRepository;
+import com.logitrack.model.InventarioBodega;
 import com.logitrack.repository.BodegaRepository;
+import com.logitrack.repository.InventarioBodegaRepository;
 import com.logitrack.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +35,16 @@ public class BodegaServiceImpl implements BodegaService {
     private final BodegaRepository bodegaRepository;
     private final AuditoriaRepository auditoriaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final InventarioBodegaRepository inventarioBodegaRepository;
 
     public BodegaServiceImpl(BodegaRepository bodegaRepository,
                               AuditoriaRepository auditoriaRepository,
-                              UsuarioRepository usuarioRepository) {
+                              UsuarioRepository usuarioRepository,
+                              InventarioBodegaRepository inventarioBodegaRepository) {
         this.bodegaRepository = bodegaRepository;
         this.auditoriaRepository = auditoriaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.inventarioBodegaRepository = inventarioBodegaRepository;
     }
 
     @Override
@@ -97,6 +102,12 @@ public class BodegaServiceImpl implements BodegaService {
     @Override
     public List<Bodega> buscarPorNombre(String nombre) {
         return bodegaRepository.findByNombreContainingIgnoreCase(nombre);
+    }
+
+    @Override
+    public List<InventarioBodega> obtenerInventarioPorBodega(Long bodegaId) {
+        Bodega bodega = obtenerPorId(bodegaId);
+        return inventarioBodegaRepository.findByBodegaId(bodegaId);
     }
 
     private void guardarAuditoria(TipoOperacion tipo, Bodega bodega, String valoresAnteriores, String valoresNuevos) {

@@ -422,26 +422,40 @@ function renderBodegas(bodegas) {
   if (!tbody) return;
 
   if (bodegas.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="is-center cell-muted" style="padding: 2rem;">No se encontraron bodegas.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="is-center cell-muted" style="padding: 2rem;">No se encontraron bodegas.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = bodegas.map((b) => `
+  // Obtener datos de stock del reporte si está disponible
+  const resumen = dashboardState?.resumen;
+  const stockPorBodega = {};
+  if (resumen && Array.isArray(resumen.stockPorBodega)) {
+    resumen.stockPorBodega.forEach(s => {
+      stockPorBodega[s.bodegaId] = s.stockTotal;
+    });
+  }
+
+  tbody.innerHTML = bodegas.map((b) => {
+    const stockTotal = stockPorBodega[b.id] ?? '—';
+    return `
     <tr data-id="${b.id}" data-name="${b.nombre}" data-location="${b.ubicacion}"
         data-capacity="${b.capacidad}" data-encargado-id="${b.encargado?.id ?? ''}">
       <td class="metric-cell__value">BOD-${b.id}</td>
       <td class="product-cell__name">${b.nombre}</td>
       <td>${b.ubicacion}</td>
       <td class="is-right"><span class="metric-cell__value">${b.capacidad}</span></td>
+      <td class="is-right"><span class="metric-cell__value">${stockTotal}</span></td>
       <td><span class="status-badge status-badge--success">Operativa</span></td>
       <td>${b.encargado?.username ?? 'Sin asignar'}</td>
-      <td class="is-right">
-        <div class="row-actions">
+      <td class="is-center">
+        <div class="row-actions row-actions--center">
+          <button class="row-action-btn" type="button" data-action="inventario" title="Ver inventario"><span class="material-symbols-outlined">inventory_2</span></button>
           <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
           <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   adjuntarEventosFilasBodega();
 }
@@ -502,6 +516,70 @@ function adjuntarEventosFilasBodega() {
       }
     });
   });
+  document.querySelectorAll('#bodegas-tbody [data-action="inventario"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr');
+      const bodegaId = row.dataset.id;
+      const bodegaNombre = row.dataset.name;
+      abrirModalInventarioBodega(bodegaId, bodegaNombre);
+    });
+  });
+}
+
+async function abrirModalInventarioBodega(bodegaId, bodegaNombre) {
+  const backdrop = document.getElementById('inventario-modal-backdrop');
+  if (!backdrop) return;
+
+  // Mostrar info básica
+  document.getElementById('inventario-modal-title').textContent = `Inventario: ${bodegaNombre}`;
+  document.querySelector('#inventario-bodega-nombre span:last-child').textContent = bodegaNombre;
+  document.querySelector('#inventario-total-productos span:last-child').textContent = 'Cargando...';
+  document.querySelector('#inventario-stock-total span:last-child').textContent = 'Cargando...';
+
+  // Mostrar loading en tabla
+  const tbody = document.getElementById('inventario-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted">Cargando inventario...</td></tr>';
+
+  backdrop.classList.add('is-open');
+
+  try {
+    const inventario = await apiFetch(`/api/bodegas/${bodegaId}/inventario`);
+
+    if (!Array.isArray(inventario) || inventario.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted">No hay productos en esta bodega.</td></tr>';
+      document.querySelector('#inventario-total-productos span:last-child').textContent = '0 productos';
+      document.querySelector('#inventario-stock-total span:last-child').textContent = '0 unidades';
+      return;
+    }
+
+    let totalProductos = 0;
+    let totalUnidades = 0;
+
+    tbody.innerHTML = inventario.map((inv) => {
+      const cantidad = inv.stock || 0;
+      const precio = inv.producto?.precio || 0;
+      const valorTotal = (cantidad * Number(precio)).toFixed(2);
+      totalProductos++;
+      totalUnidades += cantidad;
+
+      return `
+        <tr>
+          <td class="metric-cell__value">PRD-${inv.producto?.id || '?'}</td>
+          <td class="product-cell__name">${inv.producto?.nombre || 'Producto desconocido'}</td>
+          <td class="cell-muted">${inv.producto?.categoria || '-'}</td>
+          <td class="is-right"><span class="metric-cell__value">${cantidad}</span></td>
+          <td class="is-right"><span class="metric-cell__value">$${Number(precio).toFixed(2)}</span></td>
+          <td class="is-right"><span class="metric-cell__value">$${valorTotal}</span></td>
+        </tr>`;
+    }).join('');
+
+    document.querySelector('#inventario-total-productos span:last-child').textContent = `${totalProductos} productos`;
+    document.querySelector('#inventario-stock-total span:last-child').textContent = `${totalUnidades} unidades`;
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="is-center cell-muted">Error al cargar inventario: ${err.message}</td></tr>`;
+    UIKit.toast('Error al cargar inventario de la bodega', 'error');
+  }
 }
 
 let bodegaIdEditando = null;

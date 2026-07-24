@@ -1,32 +1,20 @@
-# TODO: Reemplazar alert/confirm nativos por UIKit en script.js
+# Plan de Implementación - Stock por Bodega y Gráfico de Barras
 
-## Cambios realizados en `src/main/resources/static/js/script.js` ✓
+## Estado: ✅ COMPLETADO
 
-### 1. Eliminar bodega (adjuntarEventosFilasBodega)
-- [x] Reemplazar `confirm(...)` → `await UIKit.confirmDialog({...})`
-- [x] Reemplazar `alert(err.message)` → `UIKit.toast(err.message, 'error')`
-- [x] Agregar `UIKit.toast('Bodega eliminada correctamente.', 'success')` en éxito
+### Backend
+- [x] 1. Agregar endpoint `GET /api/bodegas/{id}/inventario` en BodegaController
+- [x] 2. Agregar método en BodegaService/BodegaServiceImpl
 
-### 2. bodega-form submit (catch)
-- [x] Reemplazar `alert(err.message)` → `UIKit.toast(err.message, 'error')`
+### Frontend - CSS
+- [x] 3. Reparar CSS del gráfico de barras en dashboard (styles.css)
 
-### 3. Eliminar producto (adjuntarEventosFilasProducto)
-- [x] Reemplazar `confirm(...)` → `await UIKit.confirmDialog({...})`
-- [x] Reemplazar `alert(err.message)` → `UIKit.toast(err.message, 'error')`
+### Frontend - HTML
+- [x] 4. Agregar columna "Stock Total" en tabla de bodegas (bodegas.html)
+- [x] 5. Agregar modal de detalle de inventario por bodega (bodegas.html)
 
-### 4. product-form submit (catch)
-- [x] Reemplazar `alert(err.message)` → `UIKit.toast(err.message, 'error')`
-
-### 5. movement-form submit
-- [x] Reemplazar `alert('Debes agregar al menos un producto.')` → `UIKit.toast(..., 'warning')`
-- [x] Reemplazar `alert('Movimiento guardado con éxito')` → `UIKit.toast(..., 'success')`
-- [x] Reemplazar `alert(err.message)` → `UIKit.toast(err.message, 'error')`
-
-### 6. empleado-form submit (catch)
-- [x] Reemplazar `alert('Error al registrar empleado: ' + err.message)` → `UIKit.toast(err.message, 'error')`
-
-### 7. Exportar CSV auditoría
-- [x] Reemplazar `alert('No hay datos para exportar.')` → `UIKit.toast(..., 'warning')`
-
-### 8. protegerRutaAdmin (api.js)
-- [x] Reemplazar `alert('Solo un administrador...')` → `UIKit.toast(..., 'error')`
+### Frontend - JavaScript
+- [x] 6. Reparar función `renderBarChart()` en script.js
+- [x] 7. Agregar función `cargarInventarioBodega()` en script.js
+- [x] 8. Modificar `renderBodegas()` para incluir stock total y botón ver inventario
+- [x] 9. Agregar eventos para modal de inventario de bodega
