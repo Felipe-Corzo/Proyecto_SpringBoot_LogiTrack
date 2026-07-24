@@ -502,17 +502,72 @@ function abrirModalBodega(mode, data) {
 
 function abrirProductoModal(mode, data) {
   const form = document.getElementById('product-form');
-  if (!form) return;
   form.reset();
   document.getElementById('product-modal-title').textContent =
     mode === 'edit' ? 'Editar Producto' : 'Nuevo Producto';
   if (data) {
     form.elements.nombre.value = data.name || '';
     form.elements.categoria.value = data.category || '';
-    form.elements.stock.value = data.stock || '';
     form.elements.precio.value = data.price || '';
   }
   document.getElementById('product-modal-backdrop')?.classList.add('is-open');
+
+  // Cargar bodegas para distribucion de stock
+  cargarBodegasParaDistribucion(mode === 'edit' ? data?.id : null);
+}
+
+
+
+async function cargarBodegasParaDistribucion(productoId) {
+    const container = document.getElementById('stock-distribucion-container');
+    if (!container) return;
+
+    try {
+        const bodegas = await apiFetch('/api/bodegas');
+        let inventarios = [];
+
+        // Si estamos editando, cargar inventario actual
+        if (productoId) {
+            try {
+                const productoConInv = await apiFetch(`/api/productos/${productoId}/con-inventario`);
+                inventarios = productoConInv.distribucionStock || [];
+            } catch(e) { /* ignorar */ }
+        }
+
+        container.innerHTML = bodegas.map(b => {
+            const inv = inventarios.find(i => Number(i.bodegaId) === Number(b.id));
+            const cantidad = inv ? inv.stockTotal : 0;
+            return `
+                <div class="form-grid-2" style="margin-bottom: 8px; align-items: center;">
+                    <label class="form-label" style="margin:0; font-weight:500;">${b.nombre}</label>
+                    <input class="form-input form-input--mono stock-bodega-input" 
+                           type="number" min="0" value="${cantidad}" 
+                           data-bodega-id="${b.id}" data-bodega-nombre="${b.nombre}"
+                           placeholder="Stock en ${b.nombre}">
+                </div>
+            `;
+        }).join('');
+
+        // Calcular stock total automáticamente
+        container.querySelectorAll('.stock-bodega-input').forEach(input => {
+            input.addEventListener('input', calcularStockTotalDistribucion);
+        });
+        calcularStockTotalDistribucion();
+
+    } catch (err) {
+        container.innerHTML = '<p class="cell-muted">Error al cargar bodegas: ' + err.message + '</p>';
+    }
+}
+
+function calcularStockTotalDistribucion() {
+    const totalInput = document.getElementById('product-stock-total');
+    if (!totalInput) return;
+    const inputs = document.querySelectorAll('.stock-bodega-input');
+    let total = 0;
+    inputs.forEach(input => {
+        total += Number(input.value) || 0;
+    });
+    totalInput.value = total;
 }
 
 document.getElementById('open-create-modal-btn')?.addEventListener('click', () => {
@@ -698,14 +753,30 @@ document.getElementById('product-form')?.addEventListener('submit', async (event
   const payload = {
     nombre: form.elements.nombre.value,
     categoria: form.elements.categoria.value,
-    stock: Number(form.elements.stock.value),
+    stock: 0,
     precio: Number(form.elements.precio.value),
   };
+
+  // Obtener distribucion de stock por bodega
+  const stockPorBodega = {};
+  document.querySelectorAll('.stock-bodega-input').forEach(input => {
+    const cantidad = Number(input.value) || 0;
+    if (cantidad > 0) {
+      stockPorBodega[input.dataset.bodegaId] = cantidad;
+    }
+  });
+
   try {
     if (productoIdEditando) {
-      await apiFetch(`/api/productos/${productoIdEditando}`, { method: 'PUT', body: JSON.stringify(payload) });
+      await apiFetch(`/api/productos/${productoIdEditando}/con-inventario`, {
+        method: 'PUT',
+        body: JSON.stringify({ producto: payload, stockPorBodega })
+      });
     } else {
-      await apiFetch('/api/productos', { method: 'POST', body: JSON.stringify(payload) });
+      await apiFetch('/api/productos/con-inventario', {
+        method: 'POST',
+        body: JSON.stringify({ producto: payload, stockPorBodega })
+      });
     }
     document.getElementById('product-modal-backdrop')?.classList.remove('is-open');
     productoIdEditando = null;

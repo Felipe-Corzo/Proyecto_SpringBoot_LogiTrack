@@ -7,8 +7,8 @@ import com.logitrack.model.Bodega;
 import com.logitrack.model.MovimientoDetalle;
 import com.logitrack.model.MovimientoInventario;
 import com.logitrack.model.Producto;
-import com.logitrack.model.TipoMovimiento;
 import com.logitrack.repository.BodegaRepository;
+import com.logitrack.repository.InventarioBodegaRepository;
 import com.logitrack.repository.MovimientoInventarioRepository;
 import com.logitrack.repository.ProductoRepository;
 import org.springframework.stereotype.Service;
@@ -26,13 +26,16 @@ public class ReporteServiceImpl implements ReporteService {
     private final BodegaRepository bodegaRepository;
     private final ProductoRepository productoRepository;
     private final MovimientoInventarioRepository movimientoRepository;
+    private final InventarioBodegaRepository inventarioBodegaRepository;
 
     public ReporteServiceImpl(BodegaRepository bodegaRepository,
                                ProductoRepository productoRepository,
-                               MovimientoInventarioRepository movimientoRepository) {
+                               MovimientoInventarioRepository movimientoRepository,
+                               InventarioBodegaRepository inventarioBodegaRepository) {
         this.bodegaRepository = bodegaRepository;
         this.productoRepository = productoRepository;
         this.movimientoRepository = movimientoRepository;
+        this.inventarioBodegaRepository = inventarioBodegaRepository;
     }
 
     @Override
@@ -60,34 +63,18 @@ public class ReporteServiceImpl implements ReporteService {
         LocalDateTime fechaHasta = LocalDateTime.now();
         LocalDateTime fechaDesde = fechaHasta.minusDays(periodoDias);
         List<MovimientoInventario> movimientosRecientes = movimientoRepository.findByFechaBetween(fechaDesde, fechaHasta);
-        List<MovimientoInventario> movimientosParaStock = !movimientosRecientes.isEmpty()
-                ? movimientosRecientes
-                : movimientoRepository.findAll();
 
-        Map<Long, StockPorBodegaDTO> stockPorBodegaMap = bodegaRepository.findAll().stream()
-                .collect(Collectors.toMap(Bodega::getId,
-                        b -> StockPorBodegaDTO.builder()
-                                .bodegaNombre(b.getNombre())
-                                .stockTotal(0L)
-                                .build()));
+        // Obtener stock real desde inventario_bodega
+        List<Bodega> bodegas = bodegaRepository.findAll();
+        Map<Long, StockPorBodegaDTO> stockPorBodegaMap = new HashMap<>();
 
-        for (MovimientoInventario movimiento : movimientosParaStock) {
-            if (movimiento.getDetalles() == null) continue;
-
-            for (MovimientoDetalle detalle : movimiento.getDetalles()) {
-                if (movimiento.getBodegaOrigen() != null && (movimiento.getTipoMovimiento() == TipoMovimiento.SALIDA || movimiento.getTipoMovimiento() == TipoMovimiento.TRANSFERENCIA)) {
-                    StockPorBodegaDTO origen = stockPorBodegaMap.get(movimiento.getBodegaOrigen().getId());
-                    if (origen != null) {
-                        origen.setStockTotal(origen.getStockTotal() - detalle.getCantidad());
-                    }
-                }
-                if (movimiento.getBodegaDestino() != null && (movimiento.getTipoMovimiento() == TipoMovimiento.ENTRADA || movimiento.getTipoMovimiento() == TipoMovimiento.TRANSFERENCIA)) {
-                    StockPorBodegaDTO destino = stockPorBodegaMap.get(movimiento.getBodegaDestino().getId());
-                    if (destino != null) {
-                        destino.setStockTotal(destino.getStockTotal() + detalle.getCantidad());
-                    }
-                }
-            }
+        for (Bodega bodega : bodegas) {
+            Integer stockTotal = inventarioBodegaRepository.sumStockByBodegaId(bodega.getId());
+            stockPorBodegaMap.put(bodega.getId(), StockPorBodegaDTO.builder()
+                    .bodegaId(bodega.getId())
+                    .bodegaNombre(bodega.getNombre())
+                    .stockTotal(stockTotal != null ? stockTotal.longValue() : 0L)
+                    .build());
         }
 
         Map<Long, ProductoMovidoDTO> movimientosPorProducto = new HashMap<>();

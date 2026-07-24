@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class StockPorBodegaDTO {
 
+    private Long bodegaId;
     private String bodegaNombre;
     private long stockTotal;
 }

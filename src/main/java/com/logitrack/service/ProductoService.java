@@ -1,8 +1,10 @@
 package com.logitrack.service;
 
+import com.logitrack.dto.ProductoConInventarioDTO;
 import com.logitrack.model.Producto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ProductoService {
 
@@ -21,4 +23,12 @@ public interface ProductoService {
     List<Producto> buscarBajoStock(Integer umbral);
 
     List<Producto> filtrarProductos(String nombre, String categoria, Boolean bajoStock);
+
+    Producto guardarConInventario(Producto producto, Map<Long, Integer> stockPorBodega);
+
+    Producto actualizarConInventario(Long id, Producto producto, Map<Long, Integer> stockPorBodega);
+
+    List<ProductoConInventarioDTO> obtenerTodosConInventario();
+
+    ProductoConInventarioDTO obtenerConInventarioPorId(Long id);
 }

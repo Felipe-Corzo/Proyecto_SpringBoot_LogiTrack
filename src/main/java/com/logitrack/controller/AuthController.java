@@ -15,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.NoSuchElementException;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -45,18 +47,22 @@ public class AuthController {
 
         String token = tokenProvider.generateToken(authentication);
 
-        Usuario usuario = usuarioRepository.findByUsername(loginRequest.getUsername())
-                .or(() -> usuarioRepository.findByEmail(loginRequest.getUsername()))
-                .orElseThrow();
+        try {
+            Usuario usuario = usuarioRepository.findByUsername(loginRequest.getUsername())
+                    .or(() -> usuarioRepository.findByEmail(loginRequest.getUsername()))
+                    .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado después de autenticación"));
 
-        return ResponseEntity.ok(AuthResponse.builder()
-                .token(token)
-                .tokenType("Bearer")
-                .userId(usuario.getId())
-                .username(usuario.getUsername())
-                .email(usuario.getEmail())
-                .rol(usuario.getRol())
-                .build());
+            return ResponseEntity.ok(AuthResponse.builder()
+                    .token(token)
+                    .tokenType("Bearer")
+                    .userId(usuario.getId())
+                    .username(usuario.getUsername())
+                    .email(usuario.getEmail())
+                    .rol(usuario.getRol())
+                    .build());
+        } catch (NoSuchElementException e) {
+            throw new BadRequestException("Error al recuperar datos del usuario autenticado. Contacte al administrador.");
+        }
     }
 
     @PostMapping("/register")
@@ -69,14 +75,22 @@ public class AuthController {
             throw new BadRequestException("El correo electrónico ya está registrado.");
         }
 
+        if (registerRequest.getRol() == null) {
+            throw new BadRequestException("El rol es obligatorio. Valores permitidos: ADMIN, EMPLEADO.");
+        }
+
         Usuario usuario = Usuario.builder()
-                .username(registerRequest.getUsername())
-                .email(registerRequest.getEmail())
+                .username(registerRequest.getUsername().trim())
+                .email(registerRequest.getEmail().trim().toLowerCase())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .rol(registerRequest.getRol())
                 .build();
 
-        usuarioRepository.save(usuario);
+        try {
+            usuarioRepository.save(usuario);
+        } catch (Exception e) {
+            throw new BadRequestException("Error al registrar el usuario: " + e.getMessage());
+        }
 
         return login(new LoginRequest(registerRequest.getUsername(), registerRequest.getPassword()));
     }
