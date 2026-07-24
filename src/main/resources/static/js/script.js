@@ -1327,7 +1327,10 @@ function renderAuditorias(auditorias) {
       </td>
       <td class="is-right">
         <button class="row-action-btn" type="button" data-action="view" title="Ver detalle"
-                data-anteriores='${a.valoresAnteriores ?? ""}' data-nuevos='${a.valoresNuevos ?? ""}'>
+                data-anteriores='${escapeAttr(a.valoresAnteriores ?? "")}' data-nuevos='${escapeAttr(a.valoresNuevos ?? "")}'
+                data-entidad="${a.entidadAfectada}" data-operacion="${a.tipoOperacion}"
+                data-usuario="${a.usuario?.username || 'Sistema'}" data-fecha="${new Date(a.fechaHora).toLocaleString('es-CO')}"
+                data-entidad-id="${a.entidadId ?? ''}">
           <span class="material-symbols-outlined">visibility</span>
         </button>
       </td>
@@ -1335,23 +1338,227 @@ function renderAuditorias(auditorias) {
 
   document.querySelectorAll('#audit-table [data-action="view"]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const body = document.querySelector('#audit-modal-backdrop .modal__body');
-      if (body) {
-        body.innerHTML = `
-          <div class="diff-grid">
-            <div class="diff-panel">
-              <div class="diff-panel__header">Valores anteriores</div>
-              <div class="diff-panel__content"><pre>${formatearJson(btn.dataset.anteriores)}</pre></div>
-            </div>
-            <div class="diff-panel">
-              <div class="diff-panel__header">Valores nuevos</div>
-              <div class="diff-panel__content"><pre>${formatearJson(btn.dataset.nuevos)}</pre></div>
-            </div>
-          </div>`;
-      }
-      document.getElementById('audit-modal-backdrop')?.classList.add('is-open');
+      abrirModalAuditoriaFormateado(btn.dataset);
     });
   });
+}
+
+function escapeAttr(str) {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '"').replace(/'/g, '&#39;').replace(/</g, '<').replace(/>/g, '>');
+}
+
+function abrirModalAuditoriaFormateado(data) {
+  const backdrop = document.getElementById('audit-modal-backdrop');
+  if (!backdrop) return;
+
+  // Establecer título y subtítulo
+  document.getElementById('audit-modal-title').textContent = `Detalle: ${data.operacion} en ${data.entidad}`;
+  const subtitle = document.getElementById('audit-modal-subtitle');
+  if (subtitle) {
+    subtitle.textContent = `${data.fecha} - por ${data.usuario} - ID Entidad: ${data.entidadId || '-'}`;
+  }
+
+  // Badges de información
+  const badgesContainer = document.getElementById('audit-modal-badges');
+  if (badgesContainer) {
+    badgesContainer.innerHTML = `
+      <span class="info-badge">
+        <span class="material-symbols-outlined icon-sm">${data.operacion === 'INSERT' ? 'add_circle' : data.operacion === 'DELETE' ? 'remove_circle' : 'edit'}</span>
+        <span>${data.operacion}</span>
+      </span>
+      <span class="info-badge info-badge--accent">
+        <span class="material-symbols-outlined icon-sm">dataset</span>
+        <span>${data.entidad}</span>
+      </span>
+      <span class="info-badge info-badge--accent">
+        <span class="material-symbols-outlined icon-sm">badge</span>
+        <span>ID: ${data.entidadId || '-'}</span>
+      </span>
+      <span class="info-badge">
+        <span class="material-symbols-outlined icon-sm">person</span>
+        <span>${data.usuario}</span>
+      </span>
+      <span class="info-badge">
+        <span class="material-symbols-outlined icon-sm">schedule</span>
+        <span>${data.fecha}</span>
+      </span>
+    `;
+  }
+
+  // Parsear los JSON de valores anteriores y nuevos
+  const anteriores = parseJsonSeguro(data.anteriores);
+  const nuevos = parseJsonSeguro(data.nuevos);
+
+  const contentContainer = document.getElementById('audit-modal-content');
+  if (!contentContainer) return;
+
+  // Para INSERT solo mostrar valores nuevos
+  if (data.operacion === 'INSERT' && nuevos) {
+    contentContainer.innerHTML = `
+      <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="padding: 0.75rem 1rem; background: #f5f5f5; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-symbols-outlined icon-sm">add_circle</span>
+          Valores registrados (nuevos)
+        </div>
+        <div style="padding: 0;">
+          ${renderObjetoTabla(nuevos, 'added')}
+        </div>
+      </div>`;
+  }
+  // Para DELETE solo mostrar valores anteriores
+  else if (data.operacion === 'DELETE' && anteriores) {
+    contentContainer.innerHTML = `
+      <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="padding: 0.75rem 1rem; background: #f5f5f5; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-symbols-outlined icon-sm">remove_circle</span>
+          Valores eliminados (anteriores)
+        </div>
+        <div style="padding: 0;">
+          ${renderObjetoTabla(anteriores, 'removed')}
+        </div>
+      </div>`;
+  }
+  // Para UPDATE mostrar comparación lado a lado
+  else if (data.operacion === 'UPDATE') {
+    const diffRows = generarDiffRows(anteriores, nuevos);
+    contentContainer.innerHTML = `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+          <div style="padding: 0.75rem 1rem; background: #fff3e0; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined icon-sm">arrow_back</span>
+            Valores anteriores
+          </div>
+          <div style="padding: 0;">
+            ${anteriores ? renderObjetoTabla(anteriores, 'removed') : '<div style="padding: 1rem; color: #999;">(vacío)</div>'}
+          </div>
+        </div>
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+          <div style="padding: 0.75rem 1rem; background: #e8f5e9; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined icon-sm">arrow_forward</span>
+            Valores nuevos
+          </div>
+          <div style="padding: 0;">
+            ${nuevos ? renderObjetoTabla(nuevos, 'added') : '<div style="padding: 1rem; color: #999;">(vacío)</div>'}
+          </div>
+        </div>
+      </div>
+      ${diffRows.length > 0 ? `
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+          <div style="padding: 0.75rem 1rem; background: #f5f5f5; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined icon-sm">compare_arrows</span>
+            Resumen de cambios detectados
+          </div>
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #fafafa;">
+                <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e0e0e0;">Campo</th>
+                <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e0e0e0;">Anterior</th>
+                <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e0e0e0;">Nuevo</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${diffRows.map(r => `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                  <td style="padding: 0.75rem 1rem; font-weight: 500;">${r.campo}</td>
+                  <td style="padding: 0.75rem 1rem; color: #d32f2f;">${r.anterior}</td>
+                  <td style="padding: 0.75rem 1rem; color: #2e7d32; font-weight: 600;">${r.nuevo}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+    `;
+  } else {
+    contentContainer.innerHTML = '<div style="padding: 1rem; color: #999;">No hay datos disponibles para mostrar.</div>';
+  }
+
+  backdrop.classList.add('is-open');
+}
+
+function parseJsonSeguro(str) {
+  if (!str || str === 'null' || str === 'undefined') return null;
+  try {
+    const parsed = JSON.parse(str);
+    if (typeof parsed === 'object' && parsed !== null) return parsed;
+    return { valor: parsed };
+  } catch {
+    return str ? { valor: str } : null;
+  }
+}
+
+function renderObjetoTabla(obj, tipo) {
+  if (!obj || typeof obj !== 'object') {
+    return `<div style="padding: 1rem; color: #999;">${obj || '(vacío)'}</div>`;
+  }
+
+  const entries = Object.entries(obj).filter(([key]) => !key.startsWith('@'));
+  
+  if (entries.length === 0) return '<div style="padding: 1rem; color: #999;">(vacío)</div>';
+
+  return `
+    <table style="width: 100%; border-collapse: collapse;">
+      <tbody>
+        ${entries.map(([key, value]) => {
+          const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+          const bgColor = tipo === 'added' ? '#f1f8e9' : tipo === 'removed' ? '#fff3e0' : 'transparent';
+          const displayValue = formatearValor(value);
+          return `
+            <tr style="border-bottom: 1px solid #f0f0f0; background: ${bgColor};">
+              <td style="padding: 0.75rem 1rem; color: #666; width: 40%; vertical-align: top;">${label}</td>
+              <td style="padding: 0.75rem 1rem;">${displayValue}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function formatearValor(value) {
+  if (value === null || value === undefined) return '<span style="color: #999;">(nulo)</span>';
+  if (typeof value === 'boolean') return value ? '✅ S&iacute;' : '❌ No';
+  if (typeof value === 'object') {
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '<span style="color: #999;">(vac&iacute;o)</span>';
+      return value.map(v => typeof v === 'object' ? JSON.stringify(v) : v).join(', ');
+    }
+    if (value.id) return `#${value.id} ${value.nombre || value.username || ''}`;
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function generarDiffRows(anterior, nuevo) {
+  const rows = [];
+  if (!anterior || !nuevo) return rows;
+  
+  const allKeys = new Set([...Object.keys(anterior), ...Object.keys(nuevo)]);
+  
+  allKeys.forEach(key => {
+    if (key.startsWith('@')) return;
+    const valAnterior = anterior[key];
+    const valNuevo = nuevo[key];
+    
+    const strAnterior = typeof valAnterior === 'object' ? JSON.stringify(valAnterior) : String(valAnterior ?? '');
+    const strNuevo = typeof valNuevo === 'object' ? JSON.stringify(valNuevo) : String(valNuevo ?? '');
+    
+    if (strAnterior !== strNuevo) {
+      rows.push({
+        campo: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+        anterior: formatearValorSimple(valAnterior),
+        nuevo: formatearValorSimple(valNuevo)
+      });
+    }
+  });
+  
+  return rows;
+}
+
+function formatearValorSimple(value) {
+  if (value === null || value === undefined) return '<span style="color: #999;">(nulo)</span>';
+  if (typeof value === 'object') {
+    if (value && value.id) return `#${value.id} ${value.nombre || value.username || ''}`;
+    return JSON.stringify(value);
+  }
+  return String(value);
 }
 
 
