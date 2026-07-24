@@ -63,7 +63,7 @@
           <span class="material-symbols-outlined icon-md">help</span>
           Ayuda
         </a>
-        <a class="sidebar__link" href="#">
+        <a class="sidebar__link" href="#" id="sidebar-settings-btn">
           <span class="material-symbols-outlined icon-md">settings</span>
           Configuración
         </a>
@@ -91,7 +91,7 @@
             <span class="material-symbols-outlined">notifications</span>
             <span class="icon-btn__dot"></span>
           </button>
-          <button class="icon-btn" type="button" title="Configuración" aria-label="Configuración">
+          <button class="icon-btn" type="button" id="topbar-settings-btn" title="Configuración" aria-label="Configuración">
             <span class="material-symbols-outlined">settings</span>
           </button>
           <div class="topbar__divider"></div>
@@ -281,6 +281,67 @@
       </div>
       <div class="modal__body">
         <div id="top-products-modal-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar Empleado (solo ADMIN) -->
+  <div class="modal-backdrop" id="empleado-modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="empleado-modal-title">
+      <div class="modal__header">
+        <h2 class="modal__title" id="empleado-modal-title">Registrar Empleado</h2>
+        <button class="modal__close" type="button" aria-label="Cerrar" data-modal-dismiss>
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form class="modal__body" id="empleado-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="emp-username">Nombre de usuario</label>
+          <input class="form-input" id="emp-username" name="username" type="text" placeholder="Ej. jperez" required minlength="3" maxlength="50">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="emp-email">Correo electrónico</label>
+          <input class="form-input" id="emp-email" name="email" type="email" placeholder="empleado@logitrack.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="emp-password">Contraseña</label>
+          <input class="form-input" id="emp-password" name="password" type="password" placeholder="Mínimo 6 caracteres" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rol</label>
+          <input class="form-input" type="text" value="EMPLEADO" readonly disabled style="font-weight: 600; color: var(--color-on-surface);">
+        </div>
+      </form>
+
+      <div class="modal__footer">
+        <button class="toolbar-btn toolbar-btn--outline" type="button" data-modal-dismiss>Cancelar</button>
+        <button class="toolbar-btn toolbar-btn--primary" type="submit" form="empleado-form" id="btn-registrar-empleado">
+          <span class="material-symbols-outlined icon-sm">person_add</span>
+          Registrar Empleado
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="empleado-success-backdrop">
+    <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="empleado-success-title">
+      <div class="modal__header">
+        <h2 class="modal__title" id="empleado-success-title">Empleado Registrado</h2>
+        <button class="modal__close" type="button" aria-label="Cerrar" data-modal-dismiss>
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem 0;">
+          <span class="material-symbols-outlined" style="font-size: 40px; color: var(--color-success);">check_circle</span>
+          <div>
+            <p class="modal__message" style="margin: 0;"><strong id="empleado-success-name"></strong> ha sido registrado como EMPLEADO exitosamente.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="toolbar-btn toolbar-btn--primary" type="button" data-modal-dismiss>Aceptar</button>
       </div>
     </div>
   </div>
