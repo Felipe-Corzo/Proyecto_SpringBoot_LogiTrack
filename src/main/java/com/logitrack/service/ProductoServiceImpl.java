@@ -100,7 +100,7 @@ public class ProductoServiceImpl implements ProductoService {
 
                 // Validar capacidad de la bodega
                 Integer currentStock = inventarioBodegaRepository.sumStockByBodegaId(bodega.getId());
-                if (bodega.getCapacidad() <= currentStock + cantidad) {
+                if (bodega.getCapacidad() < currentStock + cantidad) {
                     throw new BadRequestException(String.format(
                             "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d, Intentando ingresar: %d",
                             bodega.getNombre(), bodega.getCapacidad(), currentStock, cantidad));
@@ -166,7 +166,7 @@ public class ProductoServiceImpl implements ProductoService {
 
                 // Validar capacidad de la bodega
                 Integer currentStock = inventarioBodegaRepository.sumStockByBodegaId(bodega.getId());
-                if (bodega.getCapacidad() <= currentStock + cantidad) {
+                if (bodega.getCapacidad() < currentStock + cantidad) {
                     throw new BadRequestException(String.format(
                             "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d, Intentando ingresar: %d",
                             bodega.getNombre(), bodega.getCapacidad(), currentStock, cantidad));

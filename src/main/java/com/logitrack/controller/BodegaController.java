@@ -1,5 +1,6 @@
 package com.logitrack.controller;
 
+import com.logitrack.dto.StockPorBodegaDTO;
 import com.logitrack.model.Bodega;
 import com.logitrack.model.InventarioBodega;
 import com.logitrack.service.BodegaService;
@@ -24,6 +25,11 @@ public class BodegaController {
     @GetMapping
     public ResponseEntity<List<Bodega>> obtenerTodas() {
         return ResponseEntity.ok(bodegaService.obtenerTodas());
+    }
+
+    @GetMapping("/stock")
+    public ResponseEntity<List<StockPorBodegaDTO>> obtenerStockDeTodas() {
+        return ResponseEntity.ok(bodegaService.obtenerStockTodas());
     }
 
     @GetMapping("/{id}")

@@ -1,5 +1,6 @@
 package com.logitrack.service;
 
+import com.logitrack.dto.StockPorBodegaDTO;
 import com.logitrack.model.Bodega;
 import com.logitrack.model.InventarioBodega;
 
@@ -20,4 +21,6 @@ public interface BodegaService {
     List<Bodega> buscarPorNombre(String nombre);
 
     List<InventarioBodega> obtenerInventarioPorBodega(Long bodegaId);
+
+    List<StockPorBodegaDTO> obtenerStockTodas();
 }

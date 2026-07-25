@@ -213,7 +213,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         if (movimiento.getTipoMovimiento() == TipoMovimiento.ENTRADA) {
             Bodega destino = movimiento.getBodegaDestino();
             Integer currentStock = inventarioBodegaRepository.sumStockByBodegaId(destino.getId());
-            if (destino.getCapacidad() <= currentStock + totalProductos) {
+            if (destino.getCapacidad() < currentStock + totalProductos) {
                 throw new BadRequestException(String.format(
                         "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d, Intentando ingresar: %d",
                         destino.getNombre(), destino.getCapacidad(), currentStock, totalProductos));
@@ -221,7 +221,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         } else if (movimiento.getTipoMovimiento() == TipoMovimiento.SALIDA) {
             Bodega origen = movimiento.getBodegaOrigen();
             Integer currentStock = inventarioBodegaRepository.sumStockByBodegaId(origen.getId());
-            if (origen.getCapacidad() <= currentStock) {
+            if (origen.getCapacidad() < currentStock) {
                 throw new BadRequestException(String.format(
                         "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d",
                         origen.getNombre(), origen.getCapacidad(), currentStock));
@@ -229,7 +229,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         } else if (movimiento.getTipoMovimiento() == TipoMovimiento.TRANSFERENCIA) {
             Bodega destino = movimiento.getBodegaDestino();
             Integer currentStockDestino = inventarioBodegaRepository.sumStockByBodegaId(destino.getId());
-            if (destino.getCapacidad() <= currentStockDestino + totalProductos) {
+            if (destino.getCapacidad() < currentStockDestino + totalProductos) {
                 throw new BadRequestException(String.format(
                         "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d, Intentando transferir: %d",
                         destino.getNombre(), destino.getCapacidad(), currentStockDestino, totalProductos));

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.logitrack.config.UserContext;
+import com.logitrack.dto.StockPorBodegaDTO;
 import com.logitrack.exception.BadRequestException;
 import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.Auditoria;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class BodegaServiceImpl implements BodegaService {
@@ -145,6 +147,19 @@ public class BodegaServiceImpl implements BodegaService {
     public List<InventarioBodega> obtenerInventarioPorBodega(Long bodegaId) {
         Bodega bodega = obtenerPorId(bodegaId);
         return inventarioBodegaRepository.findByBodegaId(bodegaId);
+    }
+
+    @Override
+    public List<StockPorBodegaDTO> obtenerStockTodas() {
+        List<Bodega> bodegas = bodegaRepository.findAll();
+        return bodegas.stream().map(bodega -> {
+            Integer stockTotal = inventarioBodegaRepository.sumStockByBodegaId(bodega.getId());
+            return StockPorBodegaDTO.builder()
+                    .bodegaId(bodega.getId())
+                    .bodegaNombre(bodega.getNombre())
+                    .stockTotal(stockTotal != null ? stockTotal.longValue() : 0L)
+                    .build();
+        }).collect(Collectors.toList());
     }
 
     private void guardarAuditoria(TipoOperacion tipo, Bodega bodega, String valoresAnteriores, String valoresNuevos) {

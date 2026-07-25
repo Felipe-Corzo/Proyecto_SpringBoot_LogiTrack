@@ -389,6 +389,7 @@ function initDashboardWidgets() {
    ============================================================================ */
 let todasLasBodegas = [];
 let bodegasPaginacion = null;
+let stockPorBodega = {}; // Global stock data for bodegas table
 
 async function cargarBodegas() {
   const tbody = document.getElementById('bodegas-tbody');
@@ -396,7 +397,21 @@ async function cargarBodegas() {
   protegerRuta();
 
   try {
-    todasLasBodegas = await apiFetch('/api/bodegas');
+    // Cargar bodegas y stock por bodega en paralelo
+    const [bodegas, stockData] = await Promise.all([
+      apiFetch('/api/bodegas'),
+      apiFetch('/api/bodegas/stock').catch(() => [])
+    ]);
+    todasLasBodegas = bodegas;
+    
+    // Poblar el mapa global de stock
+    stockPorBodega = {};
+    if (Array.isArray(stockData)) {
+      stockData.forEach(s => {
+        stockPorBodega[s.bodegaId] = s.stockTotal;
+      });
+    }
+    
     iniciarPaginacionBodegas(todasLasBodegas);
     initBusquedaBodegas();
   } catch (err) {
@@ -428,15 +443,6 @@ function renderBodegas(bodegas) {
 
   const usuario = getUsuarioActual();
   const esAdmin = usuario && usuario.rol === 'ADMIN';
-
-  // Obtener datos de stock del reporte si está disponible
-  const resumen = dashboardState?.resumen;
-  const stockPorBodega = {};
-  if (resumen && Array.isArray(resumen.stockPorBodega)) {
-    resumen.stockPorBodega.forEach(s => {
-      stockPorBodega[s.bodegaId] = s.stockTotal;
-    });
-  }
 
   // Botones de acción según el rol
   const botonInventario = `<button class="row-action-btn" type="button" data-action="inventario" title="Ver inventario"><span class="material-symbols-outlined">inventory_2</span></button>`;
