@@ -1,6 +1,7 @@
 package com.logitrack.service;
 
 import com.logitrack.model.Bodega;
+import com.logitrack.model.InventarioBodega;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface BodegaService {
     void eliminar(Long id);
 
     List<Bodega> buscarPorNombre(String nombre);
+
+    List<InventarioBodega> obtenerInventarioPorBodega(Long bodegaId);
 }

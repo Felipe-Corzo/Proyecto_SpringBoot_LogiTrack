@@ -1184,14 +1184,15 @@ input {
   flex-direction: column;
   justify-content: flex-end;
   position: relative;
+  min-height: 250px;
 }
 
 .bar-chart__grid {
   position: absolute;
-  left: 1.5rem;
+  left: 3rem;
   right: 1.5rem;
   top: 1.5rem;
-  bottom: 3rem;
+  bottom: 3.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1210,12 +1211,12 @@ input {
 
 .bar-chart__gridline-label {
   position: absolute;
-  left: -1.75rem;
+  left: -2.5rem;
   top: -0.6rem;
   font-family: var(--font-family-mono);
   font-size: 10px;
   color: var(--color-secondary);
-  width: 1.5rem;
+  width: 2.25rem;
   text-align: right;
 }
 
@@ -1223,9 +1224,11 @@ input {
   display: flex;
   justify-content: space-around;
   align-items: flex-end;
-  height: calc(100% - 2rem);
+  flex: 1;
   z-index: 1;
-  padding: 0 1rem;
+  padding: 0 0.5rem 0 3rem;
+  position: relative;
+  height: 100%;
 }
 
 .chart-bar {
@@ -1234,10 +1237,13 @@ input {
   align-items: center;
   width: 48px;
   cursor: pointer;
+  height: 100%;
+  justify-content: flex-end;
 }
 
 .chart-bar__fill {
   width: 100%;
+  min-height: 4px;
   background-color: var(--color-primary-container);
   border-radius: 2px 2px 0 0;
   position: relative;
@@ -1245,7 +1251,7 @@ input {
 }
 
 .chart-bar__fill--accent {
-  background-color: #adc6ff; /* tertiary-fixed-dim */
+  background-color: #adc6ff;
 }
 
 .chart-bar:hover .chart-bar__fill {
@@ -1279,6 +1285,19 @@ input {
   color: var(--color-secondary);
   margin-top: 0.75rem;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-secondary);
+  font-size: 0.875rem;
 }
 
 /* ---------------------------------- Table ---------------------------------- */

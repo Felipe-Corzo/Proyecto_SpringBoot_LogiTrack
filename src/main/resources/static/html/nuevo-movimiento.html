@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
 
 <link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="../css/ui-kit.css"> 
 </head>
 <body>
 <div class="app-shell">
@@ -28,6 +29,14 @@
     <header class="topbar">
       <div class="topbar__left">
         <button class="topbar__menu-btn" type="button"><span class="material-symbols-outlined">menu</span></button>
+      </div>
+      <div class="topbar__right">
+        <div class="topbar__divider"></div>
+        <button class="logout-btn" type="button">
+          <span class="material-symbols-outlined icon-sm">logout</span>
+          Cerrar sesión
+        </button>
+        <div class="avatar" title="Administrador">AD</div>
       </div>
     </header>
 
@@ -139,6 +148,7 @@
   <div class="mobile-overlay"></div>
 </div>
 <script src="../js/api.js"></script>
+<script src="../js/ui-kit.js"></script>    
 <script src="../js/script.js"></script>
 </body>
 </html>

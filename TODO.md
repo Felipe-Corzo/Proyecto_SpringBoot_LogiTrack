@@ -1,24 +1,20 @@
-# TODO - Corrección de Paginación y Bugs
+# Plan de Implementación - Stock por Bodega y Gráfico de Barras
 
-## Bugs encontrados
+## Estado: ✅ COMPLETADO
 
-### ❌ Productos - `pobladorCategorias()` no existe
-- En `cargarProductos()` se llama a `pobladorCategorias()` que no está definida, rompiendo la carga.
-- **Fix**: Eliminar la llamada a `pobladorCategorias()`.
+### Backend
+- [x] 1. Agregar endpoint `GET /api/bodegas/{id}/inventario` en BodegaController
+- [x] 2. Agregar método en BodegaService/BodegaServiceImpl
 
-### ❌ Movimientos - Sin paginación
-- El HTML tiene estructura de paginación pero no se usa en JS.
-- **Fix**: Agregar `initPaginacion()` en `filtrarYRenderizarMovimientos()`.
+### Frontend - CSS
+- [x] 3. Reparar CSS del gráfico de barras en dashboard (styles.css)
 
-### ❌ Auditoría - Sin paginación
-- El HTML tiene estructura de paginación pero no se usa en JS.
-- **Fix**: Agregar `initPaginacion()` en `filtrarYRenderizarAuditorias()`.
+### Frontend - HTML
+- [x] 4. Agregar columna "Stock Total" en tabla de bodegas (bodegas.html)
+- [x] 5. Agregar modal de detalle de inventario por bodega (bodegas.html)
 
-## Pasos
-
-- [x] Investigar código y entender el problema
-- [ ] Corregir `pobladorCategorias()` no definida en productos
-- [ ] Agregar paginación a movimientos
-- [ ] Agregar paginación a auditoría
-- [ ] Verificar que todo funcione
-
+### Frontend - JavaScript
+- [x] 6. Reparar función `renderBarChart()` en script.js
+- [x] 7. Agregar función `cargarInventarioBodega()` en script.js
+- [x] 8. Modificar `renderBodegas()` para incluir stock total y botón ver inventario
+- [x] 9. Agregar eventos para modal de inventario de bodega

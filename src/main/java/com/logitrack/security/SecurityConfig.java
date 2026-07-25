@@ -39,13 +39,13 @@ public class SecurityConfig {
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getUsername(),
                         user.getPassword(),
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRol().name()))
-                ))
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRol().name()))))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
@@ -57,7 +57,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
+            throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .formLogin(form -> form.disable())
@@ -75,7 +76,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/register-empleado").hasRole("ADMIN")
                 // Módulo de Auditoría restringido exclusivamente a ADMIN
                 .requestMatchers("/api/auditorias/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/bodegas/**", "/api/productos/**").hasRole("ADMIN")
+                // Bodegas: EMPLEADO solo puede VER; CREAR y ELIMINAR solo ADMIN
+                .requestMatchers(HttpMethod.GET, "/api/bodegas/**").hasAnyRole("ADMIN", "EMPLEADO")
+                .requestMatchers(HttpMethod.POST, "/api/bodegas/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/bodegas/**").hasRole("ADMIN")
+                // Productos: EMPLEADO puede VER y CREAR; solo ADMIN puede ELIMINAR
+                .requestMatchers(HttpMethod.GET, "/api/productos/**").hasAnyRole("ADMIN", "EMPLEADO")
+                .requestMatchers(HttpMethod.POST, "/api/productos/**").hasAnyRole("ADMIN", "EMPLEADO")
+                .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasRole("ADMIN")
                 // Demás API endpoints requieren autenticación
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()

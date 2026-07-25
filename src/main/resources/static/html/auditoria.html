@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
 
 <link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="../css/ui-kit.css"> 
 </head>
 <body>
 <div class="app-shell">
@@ -63,10 +64,11 @@
         </div>
       </div>
       <div class="topbar__right">
-        <button class="icon-btn" type="button" title="Notificaciones">
-          <span class="material-symbols-outlined">notifications</span>
-        </button>
         <div class="topbar__divider"></div>
+        <button class="logout-btn" type="button">
+          <span class="material-symbols-outlined icon-sm">logout</span>
+          Cerrar sesión
+        </button>
         <div class="avatar" title="Admin User">AD</div>
       </div>
     </header>
@@ -210,13 +212,18 @@
     <div class="modal__body">
       <div class="info-badges-group" id="audit-modal-badges"></div>
       <div id="audit-modal-content"></div>
-        Reconocer
+    </div>
+    <div class="modal__footer">
+      <button class="toolbar-btn toolbar-btn--outline" type="button" data-modal-dismiss>
+        <span class="material-symbols-outlined icon-sm">close</span>
+        Cerrar
       </button>
     </div>
   </div>
 </div>
 
 <script src="../js/api.js"></script>
+<script src="../js/ui-kit.js"></script>    
 <script src="../js/script.js"></script>
 </body>
 </html>

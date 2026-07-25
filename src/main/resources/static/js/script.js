@@ -422,26 +422,48 @@ function renderBodegas(bodegas) {
   if (!tbody) return;
 
   if (bodegas.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="is-center cell-muted" style="padding: 2rem;">No se encontraron bodegas.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="is-center cell-muted" style="padding: 2rem;">No se encontraron bodegas.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = bodegas.map((b) => `
+  const usuario = getUsuarioActual();
+  const esAdmin = usuario && usuario.rol === 'ADMIN';
+
+  // Obtener datos de stock del reporte si está disponible
+  const resumen = dashboardState?.resumen;
+  const stockPorBodega = {};
+  if (resumen && Array.isArray(resumen.stockPorBodega)) {
+    resumen.stockPorBodega.forEach(s => {
+      stockPorBodega[s.bodegaId] = s.stockTotal;
+    });
+  }
+
+  // Botones de acción según el rol
+  const botonInventario = `<button class="row-action-btn" type="button" data-action="inventario" title="Ver inventario"><span class="material-symbols-outlined">inventory_2</span></button>`;
+  const botonEditar = esAdmin ? `<button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>` : '';
+  const botonEliminar = esAdmin ? `<button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>` : '';
+
+  tbody.innerHTML = bodegas.map((b) => {
+    const stockTotal = stockPorBodega[b.id] ?? '—';
+    return `
     <tr data-id="${b.id}" data-name="${b.nombre}" data-location="${b.ubicacion}"
         data-capacity="${b.capacidad}" data-encargado-id="${b.encargado?.id ?? ''}">
       <td class="metric-cell__value">BOD-${b.id}</td>
       <td class="product-cell__name">${b.nombre}</td>
       <td>${b.ubicacion}</td>
       <td class="is-right"><span class="metric-cell__value">${b.capacidad}</span></td>
+      <td class="is-right"><span class="metric-cell__value">${stockTotal}</span></td>
       <td><span class="status-badge status-badge--success">Operativa</span></td>
       <td>${b.encargado?.username ?? 'Sin asignar'}</td>
-      <td class="is-right">
-        <div class="row-actions">
-          <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
-          <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+      <td class="is-center">
+        <div class="row-actions row-actions--center">
+          ${botonInventario}
+          ${botonEditar}
+          ${botonEliminar}
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   adjuntarEventosFilasBodega();
 }
@@ -485,16 +507,98 @@ function adjuntarEventosFilasBodega() {
   document.querySelectorAll('#bodegas-tbody [data-action="delete"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const row = btn.closest('tr');
-      if (!confirm(`¿Eliminar la bodega "${row.dataset.name}"?`)) return;
+      const confirmado = await UIKit.confirmDialog({
+        title: '⚠️ Eliminar bodega',
+        message: `<div style="margin-bottom: 12px;"><strong>¿Está seguro que desea eliminar "${row.dataset.name}"?</strong></div>
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; font-size: 0.875rem;">
+          <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; color: #856404;">warning</span>
+          <strong style="color: #856404;">Advertencia:</strong><br>
+          <span style="color: #856404;">Esta acción eliminará permanentemente esta bodega y <strong>todos los datos asociados</strong>:</span>
+          <ul style="margin: 6px 0 0 16px; padding: 0; color: #856404;">
+            <li>Inventario de productos en esta bodega</li>
+            <li>Referencias en movimientos de inventario</li>
+            <li>Posibles inconsistencias en reportes históricos</li>
+          </ul>
+          <span style="color: #d32f2f; font-weight: 600;">⚠️ Esta acción NO se puede deshacer.</span>
+        </div>`,
+        confirmText: 'Eliminar permanentemente',
+        danger: true,
+      });
+      if (!confirmado) return;
       try {
         await apiFetch(`/api/bodegas/${row.dataset.id}`, { method: 'DELETE' });
         row.remove();
         todasLasBodegas = todasLasBodegas.filter((b) => b.id != row.dataset.id);
+        UIKit.toast('Bodega eliminada correctamente.', 'success');
       } catch (err) {
-        alert(err.message);
+        UIKit.toast(err.message, 'error');
       }
     });
   });
+  document.querySelectorAll('#bodegas-tbody [data-action="inventario"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr');
+      const bodegaId = row.dataset.id;
+      const bodegaNombre = row.dataset.name;
+      abrirModalInventarioBodega(bodegaId, bodegaNombre);
+    });
+  });
+}
+
+async function abrirModalInventarioBodega(bodegaId, bodegaNombre) {
+  const backdrop = document.getElementById('inventario-modal-backdrop');
+  if (!backdrop) return;
+
+  // Mostrar info básica
+  document.getElementById('inventario-modal-title').textContent = `Inventario: ${bodegaNombre}`;
+  document.querySelector('#inventario-bodega-nombre span:last-child').textContent = bodegaNombre;
+  document.querySelector('#inventario-total-productos span:last-child').textContent = 'Cargando...';
+  document.querySelector('#inventario-stock-total span:last-child').textContent = 'Cargando...';
+
+  // Mostrar loading en tabla
+  const tbody = document.getElementById('inventario-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted">Cargando inventario...</td></tr>';
+
+  backdrop.classList.add('is-open');
+
+  try {
+    const inventario = await apiFetch(`/api/bodegas/${bodegaId}/inventario`);
+
+    if (!Array.isArray(inventario) || inventario.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted">No hay productos en esta bodega.</td></tr>';
+      document.querySelector('#inventario-total-productos span:last-child').textContent = '0 productos';
+      document.querySelector('#inventario-stock-total span:last-child').textContent = '0 unidades';
+      return;
+    }
+
+    let totalProductos = 0;
+    let totalUnidades = 0;
+
+    tbody.innerHTML = inventario.map((inv) => {
+      const cantidad = inv.stock || 0;
+      const precio = inv.producto?.precio || 0;
+      const valorTotal = (cantidad * Number(precio)).toFixed(2);
+      totalProductos++;
+      totalUnidades += cantidad;
+
+      return `
+        <tr>
+          <td class="metric-cell__value">PRD-${inv.producto?.id || '?'}</td>
+          <td class="product-cell__name">${inv.producto?.nombre || 'Producto desconocido'}</td>
+          <td class="cell-muted">${inv.producto?.categoria || '-'}</td>
+          <td class="is-right"><span class="metric-cell__value">${cantidad}</span></td>
+          <td class="is-right"><span class="metric-cell__value">$${Number(precio).toFixed(2)}</span></td>
+          <td class="is-right"><span class="metric-cell__value">$${valorTotal}</span></td>
+        </tr>`;
+    }).join('');
+
+    document.querySelector('#inventario-total-productos span:last-child').textContent = `${totalProductos} productos`;
+    document.querySelector('#inventario-stock-total span:last-child').textContent = `${totalUnidades} unidades`;
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="is-center cell-muted">Error al cargar inventario: ${err.message}</td></tr>`;
+    UIKit.toast('Error al cargar inventario de la bodega', 'error');
+  }
 }
 
 let bodegaIdEditando = null;
@@ -631,8 +735,9 @@ document.getElementById('bodega-form')?.addEventListener('submit', async (event)
     }
     document.getElementById('bodega-modal-backdrop')?.classList.remove('is-open');
     cargarBodegas();
+    UIKit.toast(bodegaIdEditando ? 'Bodega actualizada correctamente.' : 'Bodega creada correctamente.', 'success');
   } catch (err) {
-    alert(err.message);
+    UIKit.toast(err.message, 'error');
   }
 });
 
@@ -727,6 +832,13 @@ function renderProductos(productos) {
     return;
   }
 
+  const usuario = getUsuarioActual();
+  const esAdmin = usuario && usuario.rol === 'ADMIN';
+
+  // Botones de acción según el rol: EMPLEADO solo ve editar (no eliminar)
+  const botonEditar = `<button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>`;
+  const botonEliminar = esAdmin ? `<button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>` : '';
+
   tbody.innerHTML = productos.map((p) => `
     <tr data-id="${p.id}" data-name="${p.nombre}" data-category="${p.categoria ?? ''}"
         data-stock="${p.stock}" data-price="${p.precio}" class="${p.stock < 10 ? 'is-low-stock' : ''}">
@@ -739,8 +851,8 @@ function renderProductos(productos) {
       <td class="is-right"><span class="metric-cell__value">$${Number(p.precio).toFixed(2)}</span></td>
       <td class="is-center">
         <div class="row-actions row-actions--center">
-          <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
-          <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+          ${botonEditar}
+          ${botonEliminar}
         </div>
       </td>
     </tr>`).join('');
@@ -766,14 +878,32 @@ function adjuntarEventosFilasProducto() {
   document.querySelectorAll('#products-table [data-action="delete"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const row = btn.closest('tr');
-      if (!confirm(`¿Eliminar "${row.dataset.name}"?`)) return;
+      const confirmado = await UIKit.confirmDialog({
+        title: '⚠️ Eliminar producto',
+        message: `<div style="margin-bottom: 12px;"><strong>¿Está seguro que desea eliminar "${row.dataset.name}"?</strong></div>
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; font-size: 0.875rem;">
+          <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; color: #856404;">warning</span>
+          <strong style="color: #856404;">Advertencia:</strong><br>
+          <span style="color: #856404;">Esta acción eliminará permanentemente este producto y <strong>todos los datos asociados</strong>:</span>
+          <ul style="margin: 6px 0 0 16px; padding: 0; color: #856404;">
+            <li>Inventario del producto en todas las bodegas</li>
+            <li>Detalles en movimientos de inventario</li>
+            <li>Posibles inconsistencias en reportes históricos</li>
+          </ul>
+          <span style="color: #d32f2f; font-weight: 600;">⚠️ Esta acción NO se puede deshacer.</span>
+        </div>`,
+        confirmText: 'Eliminar permanentemente',
+        danger: true,
+      });
+      if (!confirmado) return;
       try {
         await apiFetch(`/api/productos/${row.dataset.id}`, { method: 'DELETE' });
         row.remove();
         todosLosProductos = todosLosProductos.filter((p) => p.id != row.dataset.id);
         iniciarPaginacionProductos();
+        UIKit.toast('Producto eliminado correctamente.', 'success');
       } catch (err) {
-        alert(err.message);
+        UIKit.toast(err.message, 'error');
       }
     });
   });
@@ -825,8 +955,9 @@ document.getElementById('product-form')?.addEventListener('submit', async (event
     document.getElementById('product-modal-backdrop')?.classList.remove('is-open');
     productoIdEditando = null;
     cargarProductos();
+    UIKit.toast(productoIdEditando ? 'Producto actualizado correctamente.' : 'Producto creado correctamente.', 'success');
   } catch (err) {
-    alert(err.message);
+    UIKit.toast(err.message, 'error');
   }
 });
 
@@ -1104,7 +1235,7 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
   if (!form.checkValidity()) { form.reportValidity(); return; }
 
   const filas = Array.from(document.querySelectorAll('#products-tbody tr'));
-  if (filas.length === 0) { alert('Debes agregar al menos un producto.'); return; }
+  if (filas.length === 0) { UIKit.toast('Debes agregar al menos un producto.', 'warning'); return; }
 
   const detalles = filas.map((row) => ({
     producto: { id: Number(row.querySelector('select').value) },
@@ -1128,34 +1259,94 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
 
   try {
     await apiFetch('/api/movimientos', { method: 'POST', body: JSON.stringify(payload) });
-    alert('Movimiento guardado con éxito');
+    UIKit.toast('Movimiento guardado con éxito.', 'success');
     window.location.href = 'movimientos.html';
   } catch (err) {
-    alert(err.message);
+    UIKit.toast(err.message, 'error');
   }
 });
 
 
 
 
+  /* ============================================================================
+   Auditoría (Historial + Filtros + Paginación)
+   ============================================================================ */
+let todasLasAuditorias = [];
+let auditoriasPaginacion = null;
+
+async function cargarAuditorias() {
+  const tbody = document.querySelector('#audit-table tbody');
+  if (!tbody) return;
+  protegerRuta();
+  protegerRutaAdmin();
+
+  try {
+    todasLasAuditorias = await apiFetch('/api/auditorias');
+    poblarFiltroUsuariosAuditoria();
+    filtrarYRenderizarAuditorias();
+    initEventosFiltroAuditoria();
+  } catch (err) {
+    console.error('Error cargando auditorías:', err);
+  }
+}
+
+function poblarFiltroUsuariosAuditoria() {
+  const select = document.getElementById('audit-user-filter');
+  if (!select) return;
+  const usuariosUnicos = [...new Map(
+    todasLasAuditorias.filter((a) => a.usuario).map((a) => [a.usuario.id, a.usuario])
+  ).values()];
+
+  select.innerHTML = '<option value="">Todos los usuarios</option>' +
+    usuariosUnicos.map((u) => `<option value="${u.id}">${u.username}</option>`).join('');
+}
+
+function filtrarYRenderizarAuditorias() {
+  const tbody = document.querySelector('#audit-table tbody');
+  if (!tbody) return;
+
+  const searchInput = (document.getElementById('audit-search-input')?.value || '').toLowerCase().trim();
+  const userId = document.getElementById('audit-user-filter')?.value || '';
+  const opType = document.getElementById('audit-op-filter')?.value || '';
+  const entityType = document.getElementById('audit-entity-filter')?.value || '';
+
   const filtradas = todasLasAuditorias.filter((a) => {
     const userStr = (a.usuario?.username || 'Sistema').toLowerCase();
     const entityStr = (a.entidadAfectada || '').toLowerCase();
     const coincideSearch = !searchInput || userStr.includes(searchInput) || entityStr.includes(searchInput);
-
     const coincideUser = !userId || String(a.usuario?.id) === String(userId);
     const coincideOp = !opType || a.tipoOperacion === opType;
     const coincideEntity = !entityType || a.entidadAfectada === entityType;
-
     return coincideSearch && coincideUser && coincideOp && coincideEntity;
   });
 
+  const pagination = document.getElementById('auditorias-pagination');
+
   if (filtradas.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" class="is-center cell-muted" style="padding: 2rem;">No hay registros de auditoría que coincidan con los filtros.</td></tr>`;
+    if (pagination) pagination.style.display = 'none';
     return;
   }
 
-  tbody.innerHTML = filtradas.map((a) => `
+  if (pagination) pagination.style.display = '';
+
+  auditoriasPaginacion = initPaginacion({
+    data: filtradas,
+    pageSize: 5,
+    renderFn: (slice) => renderAuditorias(slice),
+    infoId: 'auditorias-pagination-info',
+    prevBtnId: 'auditorias-prev-btn',
+    nextBtnId: 'auditorias-next-btn',
+    pageNumbersId: 'auditorias-page-numbers',
+  });
+}
+
+function renderAuditorias(auditorias) {
+  const tbody = document.querySelector('#audit-table tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = auditorias.map((a) => `
     <tr>
       <td><span class="status-badge ${badgeClasePorOperacion(a.tipoOperacion)}">${a.tipoOperacion}</span></td>
       <td class="cell-mono">${new Date(a.fechaHora).toLocaleString('es-CO')}</td>
@@ -1173,7 +1364,10 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
       </td>
       <td class="is-right">
         <button class="row-action-btn" type="button" data-action="view" title="Ver detalle"
-                data-anteriores='${a.valoresAnteriores ?? ""}' data-nuevos='${a.valoresNuevos ?? ""}'>
+                data-anteriores='${escapeAttr(a.valoresAnteriores ?? "")}' data-nuevos='${escapeAttr(a.valoresNuevos ?? "")}'
+                data-entidad="${a.entidadAfectada}" data-operacion="${a.tipoOperacion}"
+                data-usuario="${a.usuario?.username || 'Sistema'}" data-fecha="${new Date(a.fechaHora).toLocaleString('es-CO')}"
+                data-entidad-id="${a.entidadId ?? ''}">
           <span class="material-symbols-outlined">visibility</span>
         </button>
       </td>
@@ -1181,24 +1375,229 @@ document.getElementById('movement-form')?.addEventListener('submit', async (even
 
   document.querySelectorAll('#audit-table [data-action="view"]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const body = document.querySelector('#audit-modal-backdrop .modal__body');
-      if (body) {
-        body.innerHTML = `
-          <div class="diff-grid">
-            <div class="diff-panel">
-              <div class="diff-panel__header">Valores anteriores</div>
-              <div class="diff-panel__content"><pre>${formatearJson(btn.dataset.anteriores)}</pre></div>
-            </div>
-            <div class="diff-panel">
-              <div class="diff-panel__header">Valores nuevos</div>
-              <div class="diff-panel__content"><pre>${formatearJson(btn.dataset.nuevos)}</pre></div>
-            </div>
-          </div>`;
-      }
-      document.getElementById('audit-modal-backdrop')?.classList.add('is-open');
+      abrirModalAuditoriaFormateado(btn.dataset);
     });
   });
 }
+
+function escapeAttr(str) {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '"').replace(/'/g, '&#39;').replace(/</g, '<').replace(/>/g, '>');
+}
+
+function abrirModalAuditoriaFormateado(data) {
+  const backdrop = document.getElementById('audit-modal-backdrop');
+  if (!backdrop) return;
+
+  // Establecer título y subtítulo
+  document.getElementById('audit-modal-title').textContent = `Detalle: ${data.operacion} en ${data.entidad}`;
+  const subtitle = document.getElementById('audit-modal-subtitle');
+  if (subtitle) {
+    subtitle.textContent = `${data.fecha} - por ${data.usuario} - ID Entidad: ${data.entidadId || '-'}`;
+  }
+
+  // Badges de información
+  const badgesContainer = document.getElementById('audit-modal-badges');
+  if (badgesContainer) {
+    badgesContainer.innerHTML = `
+      <span class="info-badge">
+        <span class="material-symbols-outlined icon-sm">${data.operacion === 'INSERT' ? 'add_circle' : data.operacion === 'DELETE' ? 'remove_circle' : 'edit'}</span>
+        <span>${data.operacion}</span>
+      </span>
+      <span class="info-badge info-badge--accent">
+        <span class="material-symbols-outlined icon-sm">dataset</span>
+        <span>${data.entidad}</span>
+      </span>
+      <span class="info-badge info-badge--accent">
+        <span class="material-symbols-outlined icon-sm">badge</span>
+        <span>ID: ${data.entidadId || '-'}</span>
+      </span>
+      <span class="info-badge">
+        <span class="material-symbols-outlined icon-sm">person</span>
+        <span>${data.usuario}</span>
+      </span>
+      <span class="info-badge">
+        <span class="material-symbols-outlined icon-sm">schedule</span>
+        <span>${data.fecha}</span>
+      </span>
+    `;
+  }
+
+  // Parsear los JSON de valores anteriores y nuevos
+  const anteriores = parseJsonSeguro(data.anteriores);
+  const nuevos = parseJsonSeguro(data.nuevos);
+
+  const contentContainer = document.getElementById('audit-modal-content');
+  if (!contentContainer) return;
+
+  // Para INSERT solo mostrar valores nuevos
+  if (data.operacion === 'INSERT' && nuevos) {
+    contentContainer.innerHTML = `
+      <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="padding: 0.75rem 1rem; background: #f5f5f5; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-symbols-outlined icon-sm">add_circle</span>
+          Valores registrados (nuevos)
+        </div>
+        <div style="padding: 0;">
+          ${renderObjetoTabla(nuevos, 'added')}
+        </div>
+      </div>`;
+  }
+  // Para DELETE solo mostrar valores anteriores
+  else if (data.operacion === 'DELETE' && anteriores) {
+    contentContainer.innerHTML = `
+      <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="padding: 0.75rem 1rem; background: #f5f5f5; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-symbols-outlined icon-sm">remove_circle</span>
+          Valores eliminados (anteriores)
+        </div>
+        <div style="padding: 0;">
+          ${renderObjetoTabla(anteriores, 'removed')}
+        </div>
+      </div>`;
+  }
+  // Para UPDATE mostrar comparación lado a lado
+  else if (data.operacion === 'UPDATE') {
+    const diffRows = generarDiffRows(anteriores, nuevos);
+    contentContainer.innerHTML = `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+          <div style="padding: 0.75rem 1rem; background: #fff3e0; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined icon-sm">arrow_back</span>
+            Valores anteriores
+          </div>
+          <div style="padding: 0;">
+            ${anteriores ? renderObjetoTabla(anteriores, 'removed') : '<div style="padding: 1rem; color: #999;">(vacío)</div>'}
+          </div>
+        </div>
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+          <div style="padding: 0.75rem 1rem; background: #e8f5e9; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined icon-sm">arrow_forward</span>
+            Valores nuevos
+          </div>
+          <div style="padding: 0;">
+            ${nuevos ? renderObjetoTabla(nuevos, 'added') : '<div style="padding: 1rem; color: #999;">(vacío)</div>'}
+          </div>
+        </div>
+      </div>
+      ${diffRows.length > 0 ? `
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+          <div style="padding: 0.75rem 1rem; background: #f5f5f5; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-outlined icon-sm">compare_arrows</span>
+            Resumen de cambios detectados
+          </div>
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #fafafa;">
+                <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e0e0e0;">Campo</th>
+                <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e0e0e0;">Anterior</th>
+                <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e0e0e0;">Nuevo</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${diffRows.map(r => `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                  <td style="padding: 0.75rem 1rem; font-weight: 500;">${r.campo}</td>
+                  <td style="padding: 0.75rem 1rem; color: #d32f2f;">${r.anterior}</td>
+                  <td style="padding: 0.75rem 1rem; color: #2e7d32; font-weight: 600;">${r.nuevo}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+    `;
+  } else {
+    contentContainer.innerHTML = '<div style="padding: 1rem; color: #999;">No hay datos disponibles para mostrar.</div>';
+  }
+
+  backdrop.classList.add('is-open');
+}
+
+function parseJsonSeguro(str) {
+  if (!str || str === 'null' || str === 'undefined') return null;
+  try {
+    const parsed = JSON.parse(str);
+    if (typeof parsed === 'object' && parsed !== null) return parsed;
+    return { valor: parsed };
+  } catch {
+    return str ? { valor: str } : null;
+  }
+}
+
+function renderObjetoTabla(obj, tipo) {
+  if (!obj || typeof obj !== 'object') {
+    return `<div style="padding: 1rem; color: #999;">${obj || '(vacío)'}</div>`;
+  }
+
+  const entries = Object.entries(obj).filter(([key]) => !key.startsWith('@'));
+  
+  if (entries.length === 0) return '<div style="padding: 1rem; color: #999;">(vacío)</div>';
+
+  return `
+    <table style="width: 100%; border-collapse: collapse;">
+      <tbody>
+        ${entries.map(([key, value]) => {
+          const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+          const bgColor = tipo === 'added' ? '#f1f8e9' : tipo === 'removed' ? '#fff3e0' : 'transparent';
+          const displayValue = formatearValor(value);
+          return `
+            <tr style="border-bottom: 1px solid #f0f0f0; background: ${bgColor};">
+              <td style="padding: 0.75rem 1rem; color: #666; width: 40%; vertical-align: top;">${label}</td>
+              <td style="padding: 0.75rem 1rem;">${displayValue}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function formatearValor(value) {
+  if (value === null || value === undefined) return '<span style="color: #999;">(nulo)</span>';
+  if (typeof value === 'boolean') return value ? '✅ S&iacute;' : '❌ No';
+  if (typeof value === 'object') {
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '<span style="color: #999;">(vac&iacute;o)</span>';
+      return value.map(v => typeof v === 'object' ? JSON.stringify(v) : v).join(', ');
+    }
+    if (value.id) return `#${value.id} ${value.nombre || value.username || ''}`;
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function generarDiffRows(anterior, nuevo) {
+  const rows = [];
+  if (!anterior || !nuevo) return rows;
+  
+  const allKeys = new Set([...Object.keys(anterior), ...Object.keys(nuevo)]);
+  
+  allKeys.forEach(key => {
+    if (key.startsWith('@')) return;
+    const valAnterior = anterior[key];
+    const valNuevo = nuevo[key];
+    
+    const strAnterior = typeof valAnterior === 'object' ? JSON.stringify(valAnterior) : String(valAnterior ?? '');
+    const strNuevo = typeof valNuevo === 'object' ? JSON.stringify(valNuevo) : String(valNuevo ?? '');
+    
+    if (strAnterior !== strNuevo) {
+      rows.push({
+        campo: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+        anterior: formatearValorSimple(valAnterior),
+        nuevo: formatearValorSimple(valNuevo)
+      });
+    }
+  });
+  
+  return rows;
+}
+
+function formatearValorSimple(value) {
+  if (value === null || value === undefined) return '<span style="color: #999;">(nulo)</span>';
+  if (typeof value === 'object') {
+    if (value && value.id) return `#${value.id} ${value.nombre || value.username || ''}`;
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
 
 function initEventosFiltroAuditoria() {
   const searchInput = document.getElementById('audit-search-input');
@@ -1216,7 +1615,7 @@ function initEventosFiltroAuditoria() {
 
   exportBtn?.addEventListener('click', () => {
     if (todasLasAuditorias.length === 0) {
-      alert('No hay datos para exportar.');
+      UIKit.toast('No hay datos para exportar.', 'warning');
       return;
     }
     const headers = ['ID', 'Operación', 'FechaHora', 'Usuario', 'Entidad', 'EntidadID'];
@@ -1330,10 +1729,19 @@ function initPaginacion(config) {
     }
   }
 
-  document.getElementById(prevBtnId)?.addEventListener('click', () => {
+  // Clonar/reemplazar los botones prev/next elimina cualquier listener
+  // que se haya quedado pegado de llamadas anteriores a initPaginacion().
+  const prevBtnOriginal = document.getElementById(prevBtnId);
+  const nextBtnOriginal = document.getElementById(nextBtnId);
+  const prevBtn = prevBtnOriginal?.cloneNode(true) ?? null;
+  const nextBtn = nextBtnOriginal?.cloneNode(true) ?? null;
+  if (prevBtnOriginal && prevBtn) prevBtnOriginal.replaceWith(prevBtn);
+  if (nextBtnOriginal && nextBtn) nextBtnOriginal.replaceWith(nextBtn);
+
+  prevBtn?.addEventListener('click', () => {
     if (paginaActual > 1) { paginaActual--; actualizar(); if (onPageChange) onPageChange(paginaActual); }
   });
-  document.getElementById(nextBtnId)?.addEventListener('click', () => {
+  nextBtn?.addEventListener('click', () => {
     if (paginaActual < totalPaginas) { paginaActual++; actualizar(); if (onPageChange) onPageChange(paginaActual); }
   });
 
@@ -1405,7 +1813,7 @@ function initRegistroEmpleadoModal() {
 
       form.reset();
     } catch (err) {
-      alert('Error al registrar empleado: ' + err.message);
+      UIKit.toast(err.message, 'error');
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalText;
