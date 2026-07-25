@@ -500,9 +500,20 @@ function adjuntarEventosFilasBodega() {
     btn.addEventListener('click', async () => {
       const row = btn.closest('tr');
       const confirmado = await UIKit.confirmDialog({
-        title: 'Eliminar bodega',
-        message: `¿Está seguro que desea eliminar "${row.dataset.name}"? Esta acción no se puede deshacer.`,
-        confirmText: 'Eliminar',
+        title: '⚠️ Eliminar bodega',
+        message: `<div style="margin-bottom: 12px;"><strong>¿Está seguro que desea eliminar "${row.dataset.name}"?</strong></div>
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; font-size: 0.875rem;">
+          <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; color: #856404;">warning</span>
+          <strong style="color: #856404;">Advertencia:</strong><br>
+          <span style="color: #856404;">Esta acción eliminará permanentemente esta bodega y <strong>todos los datos asociados</strong>:</span>
+          <ul style="margin: 6px 0 0 16px; padding: 0; color: #856404;">
+            <li>Inventario de productos en esta bodega</li>
+            <li>Referencias en movimientos de inventario</li>
+            <li>Posibles inconsistencias en reportes históricos</li>
+          </ul>
+          <span style="color: #d32f2f; font-weight: 600;">⚠️ Esta acción NO se puede deshacer.</span>
+        </div>`,
+        confirmText: 'Eliminar permanentemente',
         danger: true,
       });
       if (!confirmado) return;
@@ -853,9 +864,20 @@ function adjuntarEventosFilasProducto() {
     btn.addEventListener('click', async () => {
       const row = btn.closest('tr');
       const confirmado = await UIKit.confirmDialog({
-        title: 'Eliminar producto',
-        message: `¿Está seguro que desea eliminar "${row.dataset.name}"? Esta acción no se puede deshacer.`,
-        confirmText: 'Eliminar',
+        title: '⚠️ Eliminar producto',
+        message: `<div style="margin-bottom: 12px;"><strong>¿Está seguro que desea eliminar "${row.dataset.name}"?</strong></div>
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; font-size: 0.875rem;">
+          <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; color: #856404;">warning</span>
+          <strong style="color: #856404;">Advertencia:</strong><br>
+          <span style="color: #856404;">Esta acción eliminará permanentemente este producto y <strong>todos los datos asociados</strong>:</span>
+          <ul style="margin: 6px 0 0 16px; padding: 0; color: #856404;">
+            <li>Inventario del producto en todas las bodegas</li>
+            <li>Detalles en movimientos de inventario</li>
+            <li>Posibles inconsistencias en reportes históricos</li>
+          </ul>
+          <span style="color: #d32f2f; font-weight: 600;">⚠️ Esta acción NO se puede deshacer.</span>
+        </div>`,
+        confirmText: 'Eliminar permanentemente',
         danger: true,
       });
       if (!confirmado) return;
