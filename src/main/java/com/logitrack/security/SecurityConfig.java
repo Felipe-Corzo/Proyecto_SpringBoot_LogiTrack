@@ -76,6 +76,10 @@ public class SecurityConfig {
                 // Módulo de Auditoría restringido exclusivamente a ADMIN
                 .requestMatchers("/api/auditorias/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/bodegas/**", "/api/productos/**").hasRole("ADMIN")
+                .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/swagger-ui.html").permitAll()
+
                 // Demás API endpoints requieren autenticación
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
