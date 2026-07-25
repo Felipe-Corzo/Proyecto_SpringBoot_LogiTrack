@@ -77,6 +77,9 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         // Validar bodegas según el tipo de movimiento
         validarBodegasYTipo(movimiento);
 
+        // Validar capacidad de la bodega según el tipo de movimiento
+        validarCapacidadBodega(movimiento);
+
         // Procesar cambios de stock en productos y en inventario_bodega
         for (MovimientoDetalle detalle : movimiento.getDetalles()) {
             detalle.setMovimiento(movimiento);
@@ -198,6 +201,39 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                             () -> new ResourceNotFoundException("Bodega Destino", "id", m.getBodegaDestino().getId()));
             m.setBodegaOrigen(origen);
             m.setBodegaDestino(destino);
+        }
+    }
+
+    private void validarCapacidadBodega(MovimientoInventario movimiento) {
+        int totalProductos = movimiento.getDetalles().stream()
+                .filter(d -> d.getCantidad() != null && d.getCantidad() > 0)
+                .mapToInt(MovimientoDetalle::getCantidad)
+                .sum();
+
+        if (movimiento.getTipoMovimiento() == TipoMovimiento.ENTRADA) {
+            Bodega destino = movimiento.getBodegaDestino();
+            Integer currentStock = inventarioBodegaRepository.sumStockByBodegaId(destino.getId());
+            if (destino.getCapacidad() <= currentStock + totalProductos) {
+                throw new BadRequestException(String.format(
+                        "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d, Intentando ingresar: %d",
+                        destino.getNombre(), destino.getCapacidad(), currentStock, totalProductos));
+            }
+        } else if (movimiento.getTipoMovimiento() == TipoMovimiento.SALIDA) {
+            Bodega origen = movimiento.getBodegaOrigen();
+            Integer currentStock = inventarioBodegaRepository.sumStockByBodegaId(origen.getId());
+            if (origen.getCapacidad() <= currentStock) {
+                throw new BadRequestException(String.format(
+                        "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d",
+                        origen.getNombre(), origen.getCapacidad(), currentStock));
+            }
+        } else if (movimiento.getTipoMovimiento() == TipoMovimiento.TRANSFERENCIA) {
+            Bodega destino = movimiento.getBodegaDestino();
+            Integer currentStockDestino = inventarioBodegaRepository.sumStockByBodegaId(destino.getId());
+            if (destino.getCapacidad() <= currentStockDestino + totalProductos) {
+                throw new BadRequestException(String.format(
+                        "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d, Intentando transferir: %d",
+                        destino.getNombre(), destino.getCapacidad(), currentStockDestino, totalProductos));
+            }
         }
     }
 

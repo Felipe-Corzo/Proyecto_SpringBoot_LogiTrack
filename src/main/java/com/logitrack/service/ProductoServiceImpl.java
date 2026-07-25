@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.logitrack.config.UserContext;
 import com.logitrack.dto.ProductoConInventarioDTO;
+import com.logitrack.exception.BadRequestException;
 import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.Auditoria;
 import com.logitrack.model.Bodega;
@@ -97,6 +98,14 @@ public class ProductoServiceImpl implements ProductoService {
                 Bodega bodega = bodegaRepository.findById(bodegaId)
                         .orElseThrow(() -> new ResourceNotFoundException("Bodega", "id", bodegaId));
 
+                // Validar capacidad de la bodega
+                Integer currentStock = inventarioBodegaRepository.sumStockByBodegaId(bodega.getId());
+                if (bodega.getCapacidad() <= currentStock + cantidad) {
+                    throw new BadRequestException(String.format(
+                            "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d, Intentando ingresar: %d",
+                            bodega.getNombre(), bodega.getCapacidad(), currentStock, cantidad));
+                }
+
                 InventarioBodega inventario = InventarioBodega.builder()
                         .producto(saved)
                         .bodega(bodega)
@@ -154,6 +163,14 @@ public class ProductoServiceImpl implements ProductoService {
 
                 Bodega bodega = bodegaRepository.findById(bodegaId)
                         .orElseThrow(() -> new ResourceNotFoundException("Bodega", "id", bodegaId));
+
+                // Validar capacidad de la bodega
+                Integer currentStock = inventarioBodegaRepository.sumStockByBodegaId(bodega.getId());
+                if (bodega.getCapacidad() <= currentStock + cantidad) {
+                    throw new BadRequestException(String.format(
+                            "La bodega '%s' tiene la capacidad al máximo. Capacidad: %d, Stock actual: %d, Intentando ingresar: %d",
+                            bodega.getNombre(), bodega.getCapacidad(), currentStock, cantidad));
+                }
 
                 InventarioBodega inventario = InventarioBodega.builder()
                         .producto(productoExistente)

@@ -1059,15 +1059,27 @@ function renderMovimientos(movimientos) {
   }
 
   tbody.innerHTML = movimientos.map((m) => `
-    <tr>
+    <tr data-movimiento-id="${m.id}">
       <td class="cell-muted">${new Date(m.fecha).toLocaleString('es-CO')}</td>
       <td><span class="status-badge ${badgeClasePorTipo(m.tipoMovimiento)}">${m.tipoMovimiento}</span></td>
       <td>${m.usuario?.username ?? '-'}</td>
       <td class="product-cell__name">${m.bodegaOrigen?.nombre ?? '-'}</td>
       <td class="product-cell__name">${m.bodegaDestino?.nombre ?? '-'}</td>
       <td class="is-right"><span class="metric-cell__value">${sumarCantidades(m.detalles)} un.</span></td>
-      <td class="is-center"><button class="row-action-btn" type="button"><span class="material-symbols-outlined">more_vert</span></button></td>
+      <td class="is-center"><button class="row-action-btn" type="button" data-action="detalle" title="Ver detalles"><span class="material-symbols-outlined">visibility</span></button></td>
     </tr>`).join('');
+
+  // Adjuntar eventos a botones de detalle
+  document.querySelectorAll('#movimientos-tbody [data-action="detalle"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr');
+      const movimientoId = Number(row.dataset.movimientoId);
+      const movimiento = todosLosMovimientos.find(m => m.id === movimientoId);
+      if (movimiento) {
+        abrirModalDetalleMovimiento(movimiento);
+      }
+    });
+  });
 }
 
 function initEventosFiltroMovimientos() {
@@ -1101,6 +1113,52 @@ function badgeClasePorTipo(tipo) {
 
 function sumarCantidades(detalles) {
   return (detalles || []).reduce((acc, d) => acc + d.cantidad, 0);
+}
+
+/* ============================================================================
+   Detalle de Movimiento (Modal)
+   ============================================================================ */
+function abrirModalDetalleMovimiento(movimiento) {
+  const backdrop = document.getElementById('movimiento-detalle-modal-backdrop');
+  if (!backdrop) return;
+
+  // Título
+  document.getElementById('movimiento-detalle-modal-title').textContent =
+    `Detalle del Movimiento #${movimiento.id}`;
+
+  // Badges de información
+  document.querySelector('#detalle-fecha span:last-child').textContent =
+    new Date(movimiento.fecha).toLocaleString('es-CO');
+  document.querySelector('#detalle-usuario span:last-child').textContent =
+    movimiento.usuario?.username ?? '-';
+  document.querySelector('#detalle-origen span:last-child').textContent =
+    movimiento.bodegaOrigen ? `Origen: ${movimiento.bodegaOrigen.nombre}` : 'Origen: -';
+  document.querySelector('#detalle-destino span:last-child').textContent =
+    movimiento.bodegaDestino ? `Destino: ${movimiento.bodegaDestino.nombre}` : 'Destino: -';
+
+  // Tabla de productos
+  const tbody = document.getElementById('movimiento-detalle-tbody');
+  if (!movimiento.detalles || movimiento.detalles.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="is-center cell-muted">No hay productos en este movimiento.</td></tr>';
+  } else {
+    tbody.innerHTML = movimiento.detalles.map((d, idx) => `
+      <tr>
+        <td class="metric-cell__value">${idx + 1}</td>
+        <td class="product-cell__name">
+          <div class="product-cell">
+            <div class="product-cell__icon"><span class="material-symbols-outlined">package_2</span></div>
+            <div>
+              <div class="product-cell__name">${d.producto?.nombre || 'Producto desconocido'}</div>
+              <div class="product-cell__sku">PRD-${d.producto?.id || '?'}</div>
+            </div>
+          </div>
+        </td>
+        <td class="cell-muted">${d.producto?.categoria || '-'}</td>
+        <td class="is-right"><span class="metric-cell__value">${d.cantidad}</span></td>
+      </tr>`).join('');
+  }
+
+  backdrop.classList.add('is-open');
 }
 
 document.addEventListener('DOMContentLoaded', cargarMovimientos);

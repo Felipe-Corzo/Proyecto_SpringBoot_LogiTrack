@@ -8,14 +8,16 @@ import com.logitrack.exception.BadRequestException;
 import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.Auditoria;
 import com.logitrack.model.Bodega;
+import com.logitrack.model.InventarioBodega;
 import com.logitrack.model.MovimientoInventario;
+import com.logitrack.model.Producto;
 import com.logitrack.model.TipoOperacion;
 import com.logitrack.model.Usuario;
 import com.logitrack.repository.AuditoriaRepository;
-import com.logitrack.model.InventarioBodega;
 import com.logitrack.repository.BodegaRepository;
 import com.logitrack.repository.InventarioBodegaRepository;
 import com.logitrack.repository.MovimientoInventarioRepository;
+import com.logitrack.repository.ProductoRepository;
 import com.logitrack.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,17 +41,20 @@ public class BodegaServiceImpl implements BodegaService {
     private final UsuarioRepository usuarioRepository;
     private final InventarioBodegaRepository inventarioBodegaRepository;
     private final MovimientoInventarioRepository movimientoRepository;
+    private final ProductoRepository productoRepository;
 
     public BodegaServiceImpl(BodegaRepository bodegaRepository,
                               AuditoriaRepository auditoriaRepository,
                               UsuarioRepository usuarioRepository,
                               InventarioBodegaRepository inventarioBodegaRepository,
-                              MovimientoInventarioRepository movimientoRepository) {
+                              MovimientoInventarioRepository movimientoRepository,
+                              ProductoRepository productoRepository) {
         this.bodegaRepository = bodegaRepository;
         this.auditoriaRepository = auditoriaRepository;
         this.usuarioRepository = usuarioRepository;
         this.inventarioBodegaRepository = inventarioBodegaRepository;
         this.movimientoRepository = movimientoRepository;
+        this.productoRepository = productoRepository;
     }
 
     @Override
@@ -101,9 +106,17 @@ public class BodegaServiceImpl implements BodegaService {
         Bodega bodega = obtenerPorId(id);
         String valoresAnteriores = serializar(bodega);
 
-        // Eliminar inventario asociado a esta bodega
+        // Recalcular stock global de productos antes de eliminar inventario
         List<InventarioBodega> inventarios = inventarioBodegaRepository.findByBodegaId(id);
         if (!inventarios.isEmpty()) {
+            for (InventarioBodega inv : inventarios) {
+                Producto producto = inv.getProducto();
+                producto.setStock(producto.getStock() - inv.getStock());
+                if (producto.getStock() < 0) {
+                    producto.setStock(0);
+                }
+                productoRepository.save(producto);
+            }
             inventarioBodegaRepository.deleteAll(inventarios);
         }
 

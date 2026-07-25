@@ -1,20 +1,21 @@
-# Plan de Implementación - Stock por Bodega y Gráfico de Barras
+# TODO: Validaciones de Capacidad de Bodega ✅ COMPLETADO
 
-## Estado: ✅ COMPLETADO
+## Objetivo
+Agregar validaciones de 'capacidad bodega' en todos los movimientos (ENTRADA, SALIDA, TRANSFERENCIA) y al registrar/actualizar nuevo producto con inventario.
 
-### Backend
-- [x] 1. Agregar endpoint `GET /api/bodegas/{id}/inventario` en BodegaController
-- [x] 2. Agregar método en BodegaService/BodegaServiceImpl
+Regla: `if (capacidad de la bodega <= cantidad de productos)` → ERROR "la bodega tiene la capacidad al maximo"
 
-### Frontend - CSS
-- [x] 3. Reparar CSS del gráfico de barras en dashboard (styles.css)
+## Pasos
 
-### Frontend - HTML
-- [x] 4. Agregar columna "Stock Total" en tabla de bodegas (bodegas.html)
-- [x] 5. Agregar modal de detalle de inventario por bodega (bodegas.html)
+### 1. Modificar `MovimientoInventarioServiceImpl.java` ✅
+- [x] **ENTRADA**: Validación usando `<=`, lanza error "La bodega '%s' tiene la capacidad al máximo"
+- [x] **SALIDA**: Validación de capacidad en bodega origen
+- [x] **TRANSFERENCIA**: Validación de capacidad en bodega destino
 
-### Frontend - JavaScript
-- [x] 6. Reparar función `renderBarChart()` en script.js
-- [x] 7. Agregar función `cargarInventarioBodega()` en script.js
-- [x] 8. Modificar `renderBodegas()` para incluir stock total y botón ver inventario
-- [x] 9. Agregar eventos para modal de inventario de bodega
+### 2. Modificar `ProductoServiceImpl.java` ✅
+- [x] **guardarConInventario**: Validación de capacidad por bodega
+- [x] **actualizarConInventario**: Validación de capacidad por bodega
+
+### 3. Verificar compilación ✅
+- [x] `mvn compile` - Compilación exitosa sin errores
+
