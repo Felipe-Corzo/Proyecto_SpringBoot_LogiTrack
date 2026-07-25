@@ -39,13 +39,13 @@ public class SecurityConfig {
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getUsername(),
                         user.getPassword(),
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRol().name()))
-                ))
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRol().name()))))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
@@ -57,30 +57,35 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
+            throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No autorizado");
-                })
-            )
-            .authorizeHttpRequests(auth -> auth
-                // Recursos estáticos HTML/JS/CSS y endpoints públicos
-                .requestMatchers("/", "/index.html", "/login", "/favicon.ico", "/html/**", "/css/**", "/js/**", "/api/auth/login", "/api/auth/register", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                // Registro de empleados restringido exclusivamente a ADMIN
-                .requestMatchers(HttpMethod.POST, "/api/auth/register-empleado").hasRole("ADMIN")
-                // Módulo de Auditoría restringido exclusivamente a ADMIN
-                .requestMatchers("/api/auditorias/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/bodegas/**", "/api/productos/**").hasRole("ADMIN")
-                // Demás API endpoints requieren autenticación
-                .requestMatchers("/api/**").authenticated()
-                .anyRequest().permitAll()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No autorizado");
+                        }))
+                .authorizeHttpRequests(auth -> auth
+                        // Recursos estáticos HTML/JS/CSS y endpoints públicos
+                        .requestMatchers("/", "/index.html", "/login", "/favicon.ico", "/html/**", "/css/**", "/js/**",
+                                "/api/auth/login", "/api/auth/register", "/v3/api-docs/**", "/swagger-ui/**",
+                                "/swagger-ui.html")
+                        .permitAll()
+                        // Registro de empleados restringido exclusivamente a ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register-empleado").hasRole("ADMIN")
+                        // Módulo de Auditoría restringido exclusivamente a ADMIN
+                        .requestMatchers("/api/auditorias/**").hasRole("ADMIN")
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/bodegas/**", "/api/productos/**").hasRole("ADMIN")
+                        // Demás API endpoints requieren autenticación
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
