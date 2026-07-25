@@ -62,16 +62,28 @@ function protegerRutaAdmin() {
   }
 }
 
-// --- Ocultar el link de Auditoria si no es ADMIN (llamar en cualquier pagina con sidebar) ---
+// --- Ocultar elementos de la UI según el rol del usuario ---
 function ajustarMenuSegunRol() {
   const usuario = getUsuarioActual();
   if (!usuario) return;
+  
+  // Auditoría solo para ADMIN
   document.querySelectorAll('a[href="auditoria.html"]').forEach((link) => {
     if (usuario.rol !== 'ADMIN') link.style.display = 'none';
   });
   document.querySelectorAll('.mobile-nav__link[href="auditoria.html"]').forEach((link) => {
     if (usuario.rol !== 'ADMIN') link.style.display = 'none';
   });
+
+  // Si es EMPLEADO, ocultar botones de crear/editar/eliminar en Bodegas
+  if (usuario.rol === 'EMPLEADO') {
+    // Botón "Nueva Bodega" en la toolbar
+    const btnNuevaBodega = document.getElementById('open-create-modal-btn');
+    if (btnNuevaBodega) btnNuevaBodega.style.display = 'none';
+    
+    // Botón "Filtros" se mantiene visible
+    // Botones de eliminar en acciones se manejan desde renderBodegas() y renderProductos()
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

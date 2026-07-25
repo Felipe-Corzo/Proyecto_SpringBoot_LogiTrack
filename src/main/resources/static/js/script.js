@@ -426,6 +426,9 @@ function renderBodegas(bodegas) {
     return;
   }
 
+  const usuario = getUsuarioActual();
+  const esAdmin = usuario && usuario.rol === 'ADMIN';
+
   // Obtener datos de stock del reporte si está disponible
   const resumen = dashboardState?.resumen;
   const stockPorBodega = {};
@@ -434,6 +437,11 @@ function renderBodegas(bodegas) {
       stockPorBodega[s.bodegaId] = s.stockTotal;
     });
   }
+
+  // Botones de acción según el rol
+  const botonInventario = `<button class="row-action-btn" type="button" data-action="inventario" title="Ver inventario"><span class="material-symbols-outlined">inventory_2</span></button>`;
+  const botonEditar = esAdmin ? `<button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>` : '';
+  const botonEliminar = esAdmin ? `<button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>` : '';
 
   tbody.innerHTML = bodegas.map((b) => {
     const stockTotal = stockPorBodega[b.id] ?? '—';
@@ -449,9 +457,9 @@ function renderBodegas(bodegas) {
       <td>${b.encargado?.username ?? 'Sin asignar'}</td>
       <td class="is-center">
         <div class="row-actions row-actions--center">
-          <button class="row-action-btn" type="button" data-action="inventario" title="Ver inventario"><span class="material-symbols-outlined">inventory_2</span></button>
-          <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
-          <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+          ${botonInventario}
+          ${botonEditar}
+          ${botonEliminar}
         </div>
       </td>
     </tr>`;
@@ -824,6 +832,13 @@ function renderProductos(productos) {
     return;
   }
 
+  const usuario = getUsuarioActual();
+  const esAdmin = usuario && usuario.rol === 'ADMIN';
+
+  // Botones de acción según el rol: EMPLEADO solo ve editar (no eliminar)
+  const botonEditar = `<button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>`;
+  const botonEliminar = esAdmin ? `<button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>` : '';
+
   tbody.innerHTML = productos.map((p) => `
     <tr data-id="${p.id}" data-name="${p.nombre}" data-category="${p.categoria ?? ''}"
         data-stock="${p.stock}" data-price="${p.precio}" class="${p.stock < 10 ? 'is-low-stock' : ''}">
@@ -836,8 +851,8 @@ function renderProductos(productos) {
       <td class="is-right"><span class="metric-cell__value">$${Number(p.precio).toFixed(2)}</span></td>
       <td class="is-center">
         <div class="row-actions row-actions--center">
-          <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
-          <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+          ${botonEditar}
+          ${botonEliminar}
         </div>
       </td>
     </tr>`).join('');
