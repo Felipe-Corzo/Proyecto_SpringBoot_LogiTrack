@@ -426,6 +426,9 @@ function renderBodegas(bodegas) {
     return;
   }
 
+  const usuario = getUsuarioActual();
+  const esAdmin = usuario && usuario.rol === 'ADMIN';
+
   // Obtener datos de stock del reporte si está disponible
   const resumen = dashboardState?.resumen;
   const stockPorBodega = {};
@@ -434,6 +437,11 @@ function renderBodegas(bodegas) {
       stockPorBodega[s.bodegaId] = s.stockTotal;
     });
   }
+
+  // Botones de acción según el rol
+  const botonInventario = `<button class="row-action-btn" type="button" data-action="inventario" title="Ver inventario"><span class="material-symbols-outlined">inventory_2</span></button>`;
+  const botonEditar = esAdmin ? `<button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>` : '';
+  const botonEliminar = esAdmin ? `<button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>` : '';
 
   tbody.innerHTML = bodegas.map((b) => {
     const stockTotal = stockPorBodega[b.id] ?? '—';
@@ -449,9 +457,9 @@ function renderBodegas(bodegas) {
       <td>${b.encargado?.username ?? 'Sin asignar'}</td>
       <td class="is-center">
         <div class="row-actions row-actions--center">
-          <button class="row-action-btn" type="button" data-action="inventario" title="Ver inventario"><span class="material-symbols-outlined">inventory_2</span></button>
-          <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
-          <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+          ${botonInventario}
+          ${botonEditar}
+          ${botonEliminar}
         </div>
       </td>
     </tr>`;
@@ -500,9 +508,20 @@ function adjuntarEventosFilasBodega() {
     btn.addEventListener('click', async () => {
       const row = btn.closest('tr');
       const confirmado = await UIKit.confirmDialog({
-        title: 'Eliminar bodega',
-        message: `¿Está seguro que desea eliminar "${row.dataset.name}"? Esta acción no se puede deshacer.`,
-        confirmText: 'Eliminar',
+        title: '⚠️ Eliminar bodega',
+        message: `<div style="margin-bottom: 12px;"><strong>¿Está seguro que desea eliminar "${row.dataset.name}"?</strong></div>
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; font-size: 0.875rem;">
+          <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; color: #856404;">warning</span>
+          <strong style="color: #856404;">Advertencia:</strong><br>
+          <span style="color: #856404;">Esta acción eliminará permanentemente esta bodega y <strong>todos los datos asociados</strong>:</span>
+          <ul style="margin: 6px 0 0 16px; padding: 0; color: #856404;">
+            <li>Inventario de productos en esta bodega</li>
+            <li>Referencias en movimientos de inventario</li>
+            <li>Posibles inconsistencias en reportes históricos</li>
+          </ul>
+          <span style="color: #d32f2f; font-weight: 600;">⚠️ Esta acción NO se puede deshacer.</span>
+        </div>`,
+        confirmText: 'Eliminar permanentemente',
         danger: true,
       });
       if (!confirmado) return;
@@ -813,6 +832,13 @@ function renderProductos(productos) {
     return;
   }
 
+  const usuario = getUsuarioActual();
+  const esAdmin = usuario && usuario.rol === 'ADMIN';
+
+  // Botones de acción según el rol: EMPLEADO solo ve editar (no eliminar)
+  const botonEditar = `<button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>`;
+  const botonEliminar = esAdmin ? `<button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>` : '';
+
   tbody.innerHTML = productos.map((p) => `
     <tr data-id="${p.id}" data-name="${p.nombre}" data-category="${p.categoria ?? ''}"
         data-stock="${p.stock}" data-price="${p.precio}" class="${p.stock < 10 ? 'is-low-stock' : ''}">
@@ -825,8 +851,8 @@ function renderProductos(productos) {
       <td class="is-right"><span class="metric-cell__value">$${Number(p.precio).toFixed(2)}</span></td>
       <td class="is-center">
         <div class="row-actions row-actions--center">
-          <button class="row-action-btn" type="button" data-action="edit" title="Editar"><span class="material-symbols-outlined">edit</span></button>
-          <button class="row-action-btn row-action-btn--danger" type="button" data-action="delete" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+          ${botonEditar}
+          ${botonEliminar}
         </div>
       </td>
     </tr>`).join('');
@@ -853,9 +879,20 @@ function adjuntarEventosFilasProducto() {
     btn.addEventListener('click', async () => {
       const row = btn.closest('tr');
       const confirmado = await UIKit.confirmDialog({
-        title: 'Eliminar producto',
-        message: `¿Está seguro que desea eliminar "${row.dataset.name}"? Esta acción no se puede deshacer.`,
-        confirmText: 'Eliminar',
+        title: '⚠️ Eliminar producto',
+        message: `<div style="margin-bottom: 12px;"><strong>¿Está seguro que desea eliminar "${row.dataset.name}"?</strong></div>
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; font-size: 0.875rem;">
+          <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; color: #856404;">warning</span>
+          <strong style="color: #856404;">Advertencia:</strong><br>
+          <span style="color: #856404;">Esta acción eliminará permanentemente este producto y <strong>todos los datos asociados</strong>:</span>
+          <ul style="margin: 6px 0 0 16px; padding: 0; color: #856404;">
+            <li>Inventario del producto en todas las bodegas</li>
+            <li>Detalles en movimientos de inventario</li>
+            <li>Posibles inconsistencias en reportes históricos</li>
+          </ul>
+          <span style="color: #d32f2f; font-weight: 600;">⚠️ Esta acción NO se puede deshacer.</span>
+        </div>`,
+        confirmText: 'Eliminar permanentemente',
         danger: true,
       });
       if (!confirmado) return;

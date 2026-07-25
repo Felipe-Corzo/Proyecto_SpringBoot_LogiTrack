@@ -9,12 +9,15 @@ import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.Auditoria;
 import com.logitrack.model.Bodega;
 import com.logitrack.model.InventarioBodega;
+import com.logitrack.model.MovimientoDetalle;
+import com.logitrack.model.MovimientoInventario;
 import com.logitrack.model.Producto;
 import com.logitrack.model.TipoOperacion;
 import com.logitrack.model.Usuario;
 import com.logitrack.repository.AuditoriaRepository;
 import com.logitrack.repository.BodegaRepository;
 import com.logitrack.repository.InventarioBodegaRepository;
+import com.logitrack.repository.MovimientoInventarioRepository;
 import com.logitrack.repository.ProductoRepository;
 import com.logitrack.repository.UsuarioRepository;
 import org.slf4j.Logger;
@@ -41,17 +44,20 @@ public class ProductoServiceImpl implements ProductoService {
     private final BodegaRepository bodegaRepository;
     private final AuditoriaRepository auditoriaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final MovimientoInventarioRepository movimientoRepository;
 
     public ProductoServiceImpl(ProductoRepository productoRepository,
                                 InventarioBodegaRepository inventarioBodegaRepository,
                                 BodegaRepository bodegaRepository,
                                 AuditoriaRepository auditoriaRepository,
-                                UsuarioRepository usuarioRepository) {
+                                UsuarioRepository usuarioRepository,
+                                MovimientoInventarioRepository movimientoRepository) {
         this.productoRepository = productoRepository;
         this.inventarioBodegaRepository = inventarioBodegaRepository;
         this.bodegaRepository = bodegaRepository;
         this.auditoriaRepository = auditoriaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.movimientoRepository = movimientoRepository;
     }
 
     @Override
@@ -171,6 +177,31 @@ public class ProductoServiceImpl implements ProductoService {
     public void eliminar(Long id) {
         Producto producto = obtenerPorId(id);
         String valoresAnteriores = serializar(producto);
+
+        // Eliminar inventario asociado a este producto en todas las bodegas
+        List<InventarioBodega> inventarios = inventarioBodegaRepository.findByProductoId(id);
+        if (!inventarios.isEmpty()) {
+            inventarioBodegaRepository.deleteAll(inventarios);
+        }
+
+        // Eliminar los detalles de movimientos que referencian este producto
+        // (los movimientos se mantienen, solo se eliminan los detalles)
+        List<MovimientoInventario> todosMovimientos = movimientoRepository.findAllOrderByFechaDesc();
+        for (MovimientoInventario mov : todosMovimientos) {
+            boolean necesitaActualizar = false;
+            var iter = mov.getDetalles().iterator();
+            while (iter.hasNext()) {
+                MovimientoDetalle detalle = iter.next();
+                if (detalle.getProducto().getId().equals(id)) {
+                    iter.remove();
+                    necesitaActualizar = true;
+                }
+            }
+            if (necesitaActualizar) {
+                movimientoRepository.save(mov);
+            }
+        }
+
         productoRepository.delete(producto);
         guardarAuditoria(TipoOperacion.DELETE, producto, valoresAnteriores, null);
     }

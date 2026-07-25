@@ -8,12 +8,14 @@ import com.logitrack.exception.BadRequestException;
 import com.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.model.Auditoria;
 import com.logitrack.model.Bodega;
+import com.logitrack.model.MovimientoInventario;
 import com.logitrack.model.TipoOperacion;
 import com.logitrack.model.Usuario;
 import com.logitrack.repository.AuditoriaRepository;
 import com.logitrack.model.InventarioBodega;
 import com.logitrack.repository.BodegaRepository;
 import com.logitrack.repository.InventarioBodegaRepository;
+import com.logitrack.repository.MovimientoInventarioRepository;
 import com.logitrack.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,15 +38,18 @@ public class BodegaServiceImpl implements BodegaService {
     private final AuditoriaRepository auditoriaRepository;
     private final UsuarioRepository usuarioRepository;
     private final InventarioBodegaRepository inventarioBodegaRepository;
+    private final MovimientoInventarioRepository movimientoRepository;
 
     public BodegaServiceImpl(BodegaRepository bodegaRepository,
                               AuditoriaRepository auditoriaRepository,
                               UsuarioRepository usuarioRepository,
-                              InventarioBodegaRepository inventarioBodegaRepository) {
+                              InventarioBodegaRepository inventarioBodegaRepository,
+                              MovimientoInventarioRepository movimientoRepository) {
         this.bodegaRepository = bodegaRepository;
         this.auditoriaRepository = auditoriaRepository;
         this.usuarioRepository = usuarioRepository;
         this.inventarioBodegaRepository = inventarioBodegaRepository;
+        this.movimientoRepository = movimientoRepository;
     }
 
     @Override
@@ -95,6 +100,25 @@ public class BodegaServiceImpl implements BodegaService {
     public void eliminar(Long id) {
         Bodega bodega = obtenerPorId(id);
         String valoresAnteriores = serializar(bodega);
+
+        // Eliminar inventario asociado a esta bodega
+        List<InventarioBodega> inventarios = inventarioBodegaRepository.findByBodegaId(id);
+        if (!inventarios.isEmpty()) {
+            inventarioBodegaRepository.deleteAll(inventarios);
+        }
+
+        // Limpiar referencias en movimientos que usan esta bodega como origen o destino
+        List<MovimientoInventario> movimientos = movimientoRepository.findByBodegaId(id);
+        for (MovimientoInventario mov : movimientos) {
+            if (mov.getBodegaOrigen() != null && mov.getBodegaOrigen().getId().equals(id)) {
+                mov.setBodegaOrigen(null);
+            }
+            if (mov.getBodegaDestino() != null && mov.getBodegaDestino().getId().equals(id)) {
+                mov.setBodegaDestino(null);
+            }
+            movimientoRepository.save(mov);
+        }
+
         bodegaRepository.delete(bodega);
         guardarAuditoria(TipoOperacion.DELETE, bodega, valoresAnteriores, null);
     }

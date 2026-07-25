@@ -63,14 +63,14 @@
             </div>
             <h3 class="uikit-modal__title"></h3>
           </div>
-          <p class="uikit-modal__message"></p>
+            <div class="uikit-modal__message"></div>
           <div class="uikit-modal__actions">
             <button class="uikit-btn uikit-btn--outline" data-role="cancel" type="button"></button>
             <button class="uikit-btn ${danger ? 'uikit-btn--danger' : 'uikit-btn--primary'}" data-role="confirm" type="button"></button>
           </div>
         </div>`;
       backdrop.querySelector('.uikit-modal__title').textContent = title;
-      backdrop.querySelector('.uikit-modal__message').textContent = message;
+      backdrop.querySelector('.uikit-modal__message').innerHTML = message;
       backdrop.querySelector('[data-role="cancel"]').textContent = cancelText;
       backdrop.querySelector('[data-role="confirm"]').textContent = confirmText;
 
