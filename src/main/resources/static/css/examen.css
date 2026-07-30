@@ -1,0 +1,443 @@
+/* ============================================================================
+   Examen — Consultas Avanzadas
+   Estilos específicos para la página de Examen
+   ============================================================================ */
+
+/* ----------------------------- Secciones contenedoras ----------------------- */
+.examen-section {
+  background-color: var(--color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--color-outline-variant, #c6c6cd);
+  border-radius: var(--radius-lg, 0.5rem);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  opacity: 1;
+  transform: none;
+}
+
+.examen-section__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-outline-variant-30, rgba(198, 198, 205, 0.3));
+}
+
+.examen-section__icon {
+  font-size: 22px;
+  color: var(--color-primary-container, #131b2e);
+  flex-shrink: 0;
+}
+
+.examen-section__title {
+  font-size: var(--font-headline-md-size, 20px);
+  line-height: var(--font-headline-md-line, 28px);
+  font-weight: var(--font-headline-md-weight, 600);
+  color: var(--color-on-surface, #191c1e);
+  margin: 0;
+  flex: 1;
+}
+
+.examen-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.examen-section__badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-secondary, #505f76);
+  background-color: var(--color-surface-container-low, #f2f4f6);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* ----------------------------- Filtros avanzados ---------------------------- */
+.examen-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.examen-filters__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .examen-filters__row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .examen-filters__row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.examen-filters__range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.examen-filters__range .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.examen-filters__range-sep {
+  color: var(--color-secondary, #505f76);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.examen-filter-checkbox {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-top: 0.25rem;
+}
+
+/* ----------------------------- Acordeón de Bodegas -------------------------- */
+.examen-acordeon {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.examen-acordeon__item {
+  border: 1px solid var(--color-outline-variant, #c6c6cd);
+  border-radius: var(--radius-md, 0.25rem);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.examen-acordeon__item:hover {
+  border-color: var(--color-secondary, #505f76);
+}
+
+.examen-acordeon__item.is-empty {
+  opacity: 0.6;
+}
+
+.examen-acordeon__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--color-on-surface, #191c1e);
+  transition: background-color 0.2s ease;
+}
+
+.examen-acordeon__trigger:hover {
+  background-color: var(--color-surface-container-low, #f2f4f6);
+}
+
+.examen-acordeon__trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.examen-acordeon__bodega-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm, 0.125rem);
+  background-color: var(--color-primary-container, #131b2e);
+  color: var(--color-on-primary, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.examen-acordeon__bodega-icon .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.examen-acordeon__bodega-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.examen-acordeon__bodega-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--color-on-surface, #191c1e);
+  margin: 0;
+}
+
+.examen-acordeon__bodega-meta {
+  font-size: 0.75rem;
+  color: var(--color-secondary, #505f76);
+  margin: 0.125rem 0 0 0;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.examen-acordeon__bodega-stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.examen-acordeon__stat {
+  text-align: center;
+}
+
+.examen-acordeon__stat-value {
+  font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-on-surface, #191c1e);
+}
+
+.examen-acordeon__stat-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-secondary, #505f76);
+}
+
+.examen-acordeon__chevron {
+  color: var(--color-secondary, #505f76);
+  transition: transform 0.25s ease;
+}
+
+.examen-acordeon__trigger[aria-expanded="true"] .examen-acordeon__chevron {
+  transform: rotate(180deg);
+}
+
+.examen-acordeon__body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.examen-acordeon__content {
+  padding: 0 1rem 1rem 1rem;
+  border-top: 1px solid var(--color-outline-variant-30, rgba(198, 198, 205, 0.3));
+}
+
+.examen-acordeon__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  color: var(--color-secondary, #505f76);
+  text-align: center;
+}
+
+.examen-acordeon__empty .material-symbols-outlined {
+  font-size: 28px;
+  opacity: 0.5;
+}
+
+.examen-acordeon__tabla-wrapper {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+
+.examen-acordeon__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.examen-acordeon__tabla thead {
+  background-color: var(--color-surface-container-low, #f2f4f6);
+  color: var(--color-secondary, #505f76);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.examen-acordeon__tabla th {
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.examen-acordeon__tabla th.is-right {
+  text-align: right;
+}
+
+.examen-acordeon__tabla td {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--color-outline-variant-30, rgba(198, 198, 205, 0.3));
+  vertical-align: middle;
+}
+
+.examen-acordeon__tabla td.is-right {
+  text-align: right;
+}
+
+.examen-acordeon__tabla tbody tr:hover {
+  background-color: var(--color-surface-container-low, #f2f4f6);
+}
+
+.examen-acordeon__tabla .cell-mono {
+  font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+}
+
+/* Mini barra de progreso para capacidad */
+.examen-capacity-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.examen-capacity-bar__track {
+  flex: 1;
+  height: 6px;
+  background-color: var(--color-surface-container-high, #e6e8ea);
+  border-radius: 9999px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.examen-capacity-bar__fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: var(--color-primary-container, #131b2e);
+}
+
+.examen-capacity-bar__fill.is-warning {
+  background-color: #f59e0b;
+}
+
+.examen-capacity-bar__fill.is-danger {
+  background-color: var(--color-error, #ba1a1a);
+}
+
+.examen-capacity-bar__text {
+  font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+  font-size: 0.6875rem;
+  color: var(--color-secondary, #505f76);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ----------------------------- Capacidad Grid por bodega --------------------- */
+.examen-capacity-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .examen-capacity-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .examen-capacity-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.examen-capacity-card {
+  background-color: var(--color-surface-container-low, #f2f4f6);
+  border: 1px solid var(--color-outline-variant, #c6c6cd);
+  border-radius: var(--radius-md, 0.25rem);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.examen-capacity-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.examen-capacity-card__name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-on-surface, #191c1e);
+  margin: 0;
+}
+
+.examen-capacity-card__percentage {
+  font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.examen-capacity-card__percentage.is-low {
+  color: var(--color-success-text, #059669);
+}
+.examen-capacity-card__percentage.is-mid {
+  color: #f59e0b;
+}
+.examen-capacity-card__percentage.is-high {
+  color: var(--color-error, #ba1a1a);
+}
+
+.examen-capacity-card__numbers {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-secondary, #505f76);
+}
+
+.examen-capacity-card__numbers span {
+  font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+}
+
+/* ----------------------------- Loading state --------------------------------- */
+.examen-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  color: var(--color-secondary, #505f76);
+  font-size: 0.875rem;
+}
+
+/* ----------------------------- Responsive ------------------------------------- */
+@media (max-width: 640px) {
+  .examen-acordeon__bodega-meta {
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  
+  .examen-acordeon__bodega-stats {
+    display: none;
+  }
+  
+  .examen-acordeon__trigger {
+    padding: 0.75rem;
+  }
+  
+  .examen-acordeon__content {
+    padding: 0 0.75rem 0.75rem 0.75rem;
+  }
+}

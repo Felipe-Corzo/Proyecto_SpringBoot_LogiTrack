@@ -74,6 +74,13 @@ function ajustarMenuSegunRol() {
   document.querySelectorAll('.mobile-nav__link[href="auditoria.html"]').forEach((link) => {
     if (usuario.rol !== 'ADMIN') link.style.display = 'none';
   });
+  // Examen solo para ADMIN
+  document.querySelectorAll('a[href="examen.html"]').forEach((link) => {
+    if (usuario.rol !== 'ADMIN') link.style.display = 'none';
+  });
+  document.querySelectorAll('.mobile-nav__link[href="examen.html"]').forEach((link) => {
+    if (usuario.rol !== 'ADMIN') link.style.display = 'none';
+  });
 
   // Si es EMPLEADO, ocultar botones de crear/editar/eliminar en Bodegas
   if (usuario.rol === 'EMPLEADO') {

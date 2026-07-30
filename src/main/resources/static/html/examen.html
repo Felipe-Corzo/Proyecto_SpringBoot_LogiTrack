@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXAMEN - Consultas Avanzadas - LogiTrack</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
+
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="../css/ui-kit.css">
+<link rel="stylesheet" href="../css/examen.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar__header">
+      <div class="sidebar__logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 2L21 7V17L12 22L3 17V7L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M3 7L12 12L21 7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M12 12V22" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="sidebar__title">LogiTrack</h1>
+        <span class="sidebar__subtitle">Warehouse Management</span>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <a class="sidebar__link" href="dashboard.html">
+        <span class="material-symbols-outlined icon-lg">dashboard</span>
+        Dashboard
+      </a>
+      <a class="sidebar__link" href="bodegas.html">
+        <span class="material-symbols-outlined icon-lg">inventory_2</span>
+        Bodegas
+      </a>
+      <a class="sidebar__link" href="productos.html">
+        <span class="material-symbols-outlined icon-lg">package_2</span>
+        Productos
+      </a>
+      <a class="sidebar__link" href="movimientos.html">
+        <span class="material-symbols-outlined icon-lg">swap_horiz</span>
+        Movimientos
+      </a>
+      <a class="sidebar__link" href="auditoria.html">
+        <span class="material-symbols-outlined icon-lg">history_edu</span>
+        Auditoría
+      </a>
+      <a class="sidebar__link is-active" href="examen.html" id="examen-sidebar-link">
+        <span class="material-symbols-outlined is-filled icon-lg">quiz</span>
+        Examen
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <a class="sidebar__link" href="#">
+        <span class="material-symbols-outlined icon-md">help</span>
+        Ayuda
+      </a>
+    </div>
+  </aside>
+
+  <!-- Contenido principal -->
+  <div class="main-wrapper">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu-btn" type="button" aria-label="Abrir menú">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div class="breadcrumb">
+          <span class="breadcrumb__root">LogiTrack</span>
+          <span class="material-symbols-outlined breadcrumb__sep">chevron_right</span>
+          <span class="breadcrumb__current">Examen - Consultas Avanzadas</span>
+        </div>
+      </div>
+
+      <div class="topbar__right">
+        <div class="topbar__divider"></div>
+        <button class="logout-btn" type="button">
+          <span class="material-symbols-outlined icon-sm">logout</span>
+          Cerrar sesión
+        </button>
+        <div class="avatar"></div>
+      </div>
+    </header>
+
+    <!-- Contenido scrolleable -->
+    <main class="content">
+      <div class="content__inner">
+
+        <!-- Header -->
+        <div class="content__header" data-animate style="animation-delay:0ms">
+          <div>
+            <h2 class="content__title">Examen - Consultas Avanzadas</h2>
+            <p class="content__subtitle">Visualización detallada de inventario, productos por bodega y análisis de datos.</p>
+          </div>
+          <div class="content__controls">
+            <button class="btn-refresh" type="button" id="examen-refresh-btn">
+              <span class="material-symbols-outlined">refresh</span>
+              Actualizar datos
+            </button>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 1: KPIs / Estadísticas Generales                         -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">monitoring</span>
+            <h3 class="examen-section__title">Estadísticas Generales</h3>
+          </div>
+          <div class="kpi-grid" id="examen-kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-card__top">
+                <div class="kpi-card__icon"><span class="material-symbols-outlined">inventory_2</span></div>
+                <span class="kpi-card__badge">Total</span>
+              </div>
+              <div>
+                <h3 class="kpi-card__label">Total Bodegas</h3>
+                <div class="kpi-card__value-row">
+                  <span class="kpi-card__value" id="examen-kpi-bodegas">–</span>
+                </div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-card__top">
+                <div class="kpi-card__icon"><span class="material-symbols-outlined">package_2</span></div>
+                <span class="kpi-card__badge">SKUs</span>
+              </div>
+              <div>
+                <h3 class="kpi-card__label">Total Productos</h3>
+                <div class="kpi-card__value-row">
+                  <span class="kpi-card__value" id="examen-kpi-productos">–</span>
+                </div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-card__top">
+                <div class="kpi-card__icon kpi-card__icon--secondary"><span class="material-symbols-outlined">payments</span></div>
+                <span class="kpi-card__badge">Valor Total</span>
+              </div>
+              <div>
+                <h3 class="kpi-card__label">Valor del Inventario</h3>
+                <div class="kpi-card__value-row">
+                  <span class="kpi-card__value" id="examen-kpi-valor">–</span>
+                </div>
+              </div>
+            </div>
+            <div class="kpi-card kpi-card--danger">
+              <div class="kpi-card__top">
+                <div class="kpi-card__icon kpi-card__icon--danger"><span class="material-symbols-outlined">warning</span></div>
+                <span class="kpi-card__badge kpi-card__badge--danger">Requiere acción</span>
+              </div>
+              <div>
+                <h3 class="kpi-card__label">Bajo Stock</h3>
+                <div class="kpi-card__value-row">
+                  <span class="kpi-card__value" id="examen-kpi-bajo-stock">–</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 2: Filtros Avanzados                                     -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">filter_alt</span>
+            <h3 class="examen-section__title">Filtros Avanzados</h3>
+            <div class="examen-section__actions">
+              <button class="toolbar-btn toolbar-btn--outline" type="button" id="examen-clear-filters">
+                <span class="material-symbols-outlined icon-sm">close</span>
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+
+          <div class="examen-filters">
+            <!-- Fila 1 -->
+            <div class="examen-filters__row">
+              <div class="form-group">
+                <label class="form-label">Rango de Precio ($)</label>
+                <div class="examen-filters__range">
+                  <input class="form-input form-input--mono" id="filter-precio-min" type="number" min="0" step="0.01" placeholder="Mín">
+                  <span class="examen-filters__range-sep">–</span>
+                  <input class="form-input form-input--mono" id="filter-precio-max" type="number" min="0" step="0.01" placeholder="Máx">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Rango de Stock</label>
+                <div class="examen-filters__range">
+                  <input class="form-input form-input--mono" id="filter-stock-min" type="number" min="0" placeholder="Mín">
+                  <span class="examen-filters__range-sep">–</span>
+                  <input class="form-input form-input--mono" id="filter-stock-max" type="number" min="0" placeholder="Máx">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Categoría</label>
+                <div class="select-wrapper">
+                  <select class="form-select" id="filter-categoria">
+                    <option value="">Todas las categorías</option>
+                  </select>
+                  <span class="material-symbols-outlined">expand_more</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bodega</label>
+                <div class="select-wrapper">
+                  <select class="form-select" id="filter-bodega">
+                    <option value="">Todas las bodegas</option>
+                  </select>
+                  <span class="material-symbols-outlined">expand_more</span>
+                </div>
+              </div>
+            </div>
+            <!-- Fila 2 -->
+            <div class="examen-filters__row">
+              <div class="form-group">
+                <label class="form-label">Nombre del Producto</label>
+                <input class="form-input" id="filter-nombre" type="text" placeholder="Buscar por nombre...">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Stock mínimo por bodega</label>
+                <input class="form-input form-input--mono" id="filter-bodega-stock-min" type="number" min="0" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Solo con stock</label>
+                <div class="examen-filter-checkbox">
+                  <label class="checkbox-field">
+                    <input id="filter-solo-con-stock" type="checkbox">
+                    <span>Stock > 0</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">&nbsp;</label>
+                <button class="toolbar-btn toolbar-btn--primary" type="button" id="examen-apply-filters" style="width:100%;">
+                  <span class="material-symbols-outlined icon-sm">search</span>
+                  Aplicar Filtros
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 3: Productos por Bodega (Acordeón)                       -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">warehouse</span>
+            <h3 class="examen-section__title">Productos por Bodega</h3>
+            <div class="examen-section__actions">
+              <span class="examen-section__badge" id="examen-badge-productos-filtrados">Mostrando todos los productos</span>
+            </div>
+          </div>
+
+          <div id="examen-acordeon-container">
+            <!-- Loading state -->
+            <div class="examen-loading" id="examen-acordeon-loading">
+              <div class="uikit-spinner"></div>
+              <span>Cargando bodegas e inventario...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 4: Capacidad vs Stock usado por Bodega                   -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">bar_chart</span>
+            <h3 class="examen-section__title">Capacidad vs Stock por Bodega</h3>
+          </div>
+
+          <div class="examen-capacity-grid" id="examen-capacity-grid">
+            <div class="examen-loading" id="examen-capacity-loading">
+              <div class="uikit-spinner"></div>
+              <span>Cargando datos de capacidad...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 5: Resumen de Inventario Global                          -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">table</span>
+            <h3 class="examen-section__title">Inventario Global Detallado</h3>
+          </div>
+
+          <div class="table-card">
+            <div class="table-card__scroll">
+              <table class="data-table" id="examen-global-table">
+                <thead>
+                  <tr>
+                    <th>ID Producto</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th class="is-right">Precio</th>
+                    <th class="is-right">Stock Global</th>
+                    <th class="is-right">Valor Total</th>
+                    <th>Bodegas</th>
+                  </tr>
+                </thead>
+                <tbody id="examen-global-tbody">
+                  <tr>
+                    <td colspan="7" class="is-center cell-muted" style="padding: 2rem;">
+                      <div class="examen-loading">
+                        <div class="uikit-spinner"></div>
+                        <span>Cargando inventario global...</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Nav inferior (solo móvil) -->
+  <nav class="mobile-nav">
+    <a class="mobile-nav__link" href="dashboard.html">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="mobile-nav__label">Dashboard</span>
+    </a>
+    <a class="mobile-nav__link" href="bodegas.html">
+      <span class="material-symbols-outlined">inventory_2</span>
+      <span class="mobile-nav__label">Bodegas</span>
+    </a>
+    <a class="mobile-nav__link" href="productos.html">
+      <span class="material-symbols-outlined">package_2</span>
+      <span class="mobile-nav__label">Productos</span>
+    </a>
+    <a class="mobile-nav__link" href="movimientos.html">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      <span class="mobile-nav__label">Movimientos</span>
+    </a>
+    <a class="mobile-nav__link" href="auditoria.html">
+      <span class="material-symbols-outlined">history_edu</span>
+      <span class="mobile-nav__label">Auditoría</span>
+    </a>
+    <a class="mobile-nav__link is-active" href="#">
+      <span class="material-symbols-outlined is-filled">quiz</span>
+      <span class="mobile-nav__label">Examen</span>
+    </a>
+  </nav>
+
+  <!-- Overlay para el menú móvil -->
+  <div class="mobile-overlay"></div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/ui-kit.js"></script>
+<script src="../js/examen.js"></script>
+</body>
+</html>
+
