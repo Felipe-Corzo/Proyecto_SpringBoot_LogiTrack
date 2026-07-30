@@ -410,6 +410,110 @@
   font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
 }
 
+/* ----------------------------- Inline filters (new sections) ----------------- */
+.examen-inline-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.5rem;
+}
+
+.examen-inline-filters .form-group {
+  margin-bottom: 0;
+}
+
+/* ----------------------------- Category grid --------------------------------- */
+.examen-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.examen-category-card {
+  background-color: var(--color-surface-container-low, #f2f4f6);
+  border: 1px solid var(--color-outline-variant, #c6c6cd);
+  border-radius: var(--radius-md, 0.25rem);
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.examen-category-card:hover {
+  border-color: var(--color-secondary, #505f76);
+  transform: translateY(-2px);
+}
+
+.examen-category-card__icon {
+  font-size: 32px;
+  color: var(--color-primary-container, #131b2e);
+  opacity: 0.7;
+}
+
+.examen-category-card__name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-on-surface, #191c1e);
+  margin: 0;
+}
+
+.examen-category-card__count {
+  font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary-container, #131b2e);
+}
+
+.examen-category-card__stock-total {
+  font-size: 0.75rem;
+  color: var(--color-secondary, #505f76);
+}
+
+/* ----------------------------- Valor card (sección 8) ------------------------- */
+.examen-valor-card {
+  background-color: var(--color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--color-outline-variant, #c6c6cd);
+  border-radius: var(--radius-md, 0.25rem);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.examen-valor-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.examen-valor-card__name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-on-surface, #191c1e);
+  margin: 0;
+}
+
+.examen-valor-card__amount {
+  font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-success-text, #059669);
+}
+
+.examen-valor-card__stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-secondary, #505f76);
+}
+
+.examen-valor-card__stats span {
+  font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+}
+
 /* ----------------------------- Loading state --------------------------------- */
 .examen-loading {
   display: flex;

@@ -41,7 +41,6 @@ async function initExamenPage() {
   if (u && u.rol !== 'ADMIN') {
     const link = document.getElementById('examen-sidebar-link');
     if (link) link.style.display = 'none';
-    // Also hide from mobile nav
     document.querySelectorAll('.mobile-nav__link[href*="examen"]').forEach((el) => {
       el.style.display = 'none';
     });
@@ -52,6 +51,13 @@ async function initExamenPage() {
 
   // Initial render with no filters
   applyFilters();
+
+  // Render new sections
+  renderTopMovidos();
+  renderMovimientosTipoBodega();
+  renderValorBodega();
+  renderProductosEspeciales();
+  renderCategorias();
 }
 
 // ============================================================================
@@ -125,6 +131,20 @@ function populateFilterSelects() {
     bodegaSelect.innerHTML = '<option value="">Todas las bodegas</option>' +
       examenState.bodegas.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('');
   }
+
+  // Bodega filter for section 7 (Movimientos por Tipo y Bodega)
+  const movBodegaSelect = document.getElementById('mov-tipo-bodega-bodega');
+  if (movBodegaSelect) {
+    movBodegaSelect.innerHTML = '<option value="">Todas las bodegas</option>' +
+      examenState.bodegas.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('');
+  }
+
+  // Bodega filter for section 8 (Valor por Bodega)
+  const valorBodegaSelect = document.getElementById('valor-bodega-select');
+  if (valorBodegaSelect) {
+    valorBodegaSelect.innerHTML = '<option value="">Todas las bodegas</option>' +
+      examenState.bodegas.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('');
+  }
 }
 
 // ============================================================================
@@ -158,6 +178,21 @@ function setupEventListeners() {
       if (e.key === 'Enter') applyFilters();
     });
   });
+
+  // ---- New sections event listeners ----
+
+  // Sección 6: Top movidos
+  document.getElementById('top-movidos-apply')?.addEventListener('click', renderTopMovidos);
+
+  // Sección 7: Movimientos por tipo y bodega
+  document.getElementById('mov-tipo-bodega-apply')?.addEventListener('click', renderMovimientosTipoBodega);
+
+  // Sección 8: Valor por bodega
+  document.getElementById('valor-bodega-select')?.addEventListener('change', renderValorBodega);
+  document.getElementById('valor-bodega-order')?.addEventListener('change', renderValorBodega);
+
+  // Sección 9: Productos especiales
+  document.getElementById('productos-especiales-tipo')?.addEventListener('change', renderProductosEspeciales);
 }
 
 // ============================================================================
@@ -553,5 +588,321 @@ function renderGlobalTable(filters, filteredProductos) {
       </td>
     </tr>
   `).join('');
+}
+
+// ============================================================================
+// SECCIÓN 6: Top 20 Productos Más Movidos
+// ============================================================================
+async function renderTopMovidos() {
+  const tbody = document.getElementById('examen-top-movidos-tbody');
+  if (!tbody) return;
+
+  const dias = document.getElementById('top-movidos-dias')?.value || 30;
+
+  tbody.innerHTML = '<tr><td colspan="5" class="is-center cell-muted" style="padding:2rem;"><div class="uikit-spinner"></div><span>Cargando...</span></td></tr>';
+
+  try {
+    const reporte = await apiFetch(`/api/reportes/resumen?dias=${dias}&limit=20`);
+    const productos = reporte.productosMasMovidos || [];
+
+    if (!productos.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="is-center cell-muted" style="padding:2rem;">No hay movimientos en este rango de días.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = productos.map((p, i) => `
+      <tr>
+        <td class="cell-mono">${i + 1}</td>
+        <td><strong>${p.nombre}</strong></td>
+        <td class="cell-mono">${p.categoria || '-'}</td>
+        <td class="is-right"><span class="cell-mono" style="font-weight:600;">${p.totalMovido}</span></td>
+        <td class="is-right"><span class="cell-mono">${p.stock ?? '—'}</span></td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" class="is-center cell-muted" style="padding:2rem;">Error: ${err.message}</td></tr>`;
+  }
+}
+
+// ============================================================================
+// SECCIÓN 7: Movimientos por Tipo y Bodega
+// ============================================================================
+async function renderMovimientosTipoBodega() {
+  const tbody = document.getElementById('examen-mov-tipo-bodega-tbody');
+  if (!tbody) return;
+
+  const tipo = document.getElementById('mov-tipo-bodega-tipo')?.value || '';
+  const bodegaId = document.getElementById('mov-tipo-bodega-bodega')?.value || '';
+  const desde = document.getElementById('mov-tipo-bodega-desde')?.value || '';
+  const hasta = document.getElementById('mov-tipo-bodega-hasta')?.value || '';
+
+  tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;"><div class="uikit-spinner"></div><span>Cargando...</span></td></tr>';
+
+  try {
+    // Obtener movimientos según filtros
+    let movimientos;
+    if (desde && hasta) {
+      const d = `${desde}T00:00:00`;
+      const h = `${hasta}T23:59:59`;
+      movimientos = await apiFetch(`/api/movimientos/rango?desde=${d}&hasta=${h}`);
+    } else if (tipo) {
+      movimientos = await apiFetch(`/api/movimientos/tipo/${tipo}`);
+    } else {
+      movimientos = await apiFetch('/api/movimientos');
+    }
+
+    // Aplicar filtros manuales
+    let filtrados = movimientos.filter(m => {
+      if (tipo && m.tipoMovimiento !== tipo) return false;
+      if (bodegaId) {
+        const matchOrigen = m.bodegaOrigen?.id && String(m.bodegaOrigen.id) === String(bodegaId);
+        const matchDestino = m.bodegaDestino?.id && String(m.bodegaDestino.id) === String(bodegaId);
+        if (!matchOrigen && !matchDestino) return false;
+      }
+      return true;
+    });
+
+    // Ordenar por fecha descendente y tomar primeros 50
+    filtrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    filtrados = filtrados.slice(0, 50);
+
+    if (!filtrados.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;">No se encontraron movimientos con esos filtros.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtrados.map(m => {
+      const badgeClass = { ENTRADA: 'status-badge--success', SALIDA: 'status-badge--danger', TRANSFERENCIA: 'status-badge--info' }[m.tipoMovimiento] || '';
+      const totalUnids = (m.detalles || []).reduce((sum, d) => sum + (d.cantidad || 0), 0);
+      return `
+        <tr>
+          <td><span class="status-badge ${badgeClass}">${m.tipoMovimiento}</span></td>
+          <td>${m.bodegaOrigen?.nombre || '-'}</td>
+          <td>${m.bodegaDestino?.nombre || '-'}</td>
+          <td class="is-right"><span class="cell-mono">1</span></td>
+          <td class="is-right"><span class="cell-mono" style="font-weight:600;">${totalUnids}</span></td>
+          <td>${m.usuario?.username || '-'}</td>
+        </tr>`;
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;">Error: ${err.message}</td></tr>`;
+  }
+}
+
+// ============================================================================
+// SECCIÓN 8: Valor del Inventario por Bodega
+// ============================================================================
+function renderValorBodega() {
+  const container = document.getElementById('examen-valor-grid');
+  if (!container) return;
+
+  const bodegaFiltro = document.getElementById('valor-bodega-select')?.value || '';
+  const orderBy = document.getElementById('valor-bodega-order')?.value || 'valor-desc';
+
+  let bodegas = examenState.bodegas;
+  if (bodegaFiltro) {
+    bodegas = bodegas.filter(b => String(b.id) === String(bodegaFiltro));
+  }
+
+  // Calcular valor por bodega
+  let data = bodegas.map(b => {
+    const inventario = examenState.inventarioPorBodega[b.id] || [];
+    let valorTotal = 0;
+    let totalUnidades = 0;
+    inventario.forEach(inv => {
+      const cantidad = inv.stock || 0;
+      const precio = Number(inv.producto?.precio || 0);
+      valorTotal += cantidad * precio;
+      totalUnidades += cantidad;
+    });
+    return { bodega: b, valorTotal, totalUnidades, totalProductos: inventario.length };
+  });
+
+  // Ordenar
+  data.sort((a, b) => {
+    switch (orderBy) {
+      case 'valor-asc': return a.valorTotal - b.valorTotal;
+      case 'valor-desc': return b.valorTotal - a.valorTotal;
+      case 'nombre': return a.bodega.nombre.localeCompare(b.bodega.nombre);
+      case 'productos': return b.totalProductos - a.totalProductos;
+      default: return b.valorTotal - a.valorTotal;
+    }
+  });
+
+  if (!data.length) {
+    container.innerHTML = '<div class="examen-loading"><span>No hay datos.</span></div>';
+    return;
+  }
+
+  container.innerHTML = data.map(d => `
+    <div class="examen-valor-card">
+      <div class="examen-valor-card__header">
+        <h4 class="examen-valor-card__name">${d.bodega.nombre}</h4>
+        <span class="examen-valor-card__amount">$${d.valorTotal.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      </div>
+      <div class="examen-valor-card__stats">
+        <span>Productos: ${d.totalProductos}</span>
+        <span>Unidades: ${d.totalUnidades}</span>
+        <span>Precio prom: $${d.totalProductos > 0 ? (d.valorTotal / d.totalUnidades).toFixed(2) : '0.00'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================================
+// SECCIÓN 9: Productos sin Stock / en múltiples bodegas / sin movimientos
+// ============================================================================
+function renderProductosEspeciales() {
+  const tbody = document.getElementById('examen-productos-especiales-tbody');
+  if (!tbody) return;
+
+  const tipo = document.getElementById('productos-especiales-tipo')?.value || 'sin-stock';
+
+  let productos = [];
+
+  if (tipo === 'sin-stock') {
+    // Productos con stock global = 0
+    productos = examenState.productos.filter(p => p.stock === 0).map(p => {
+      const bodegasStr = getBodegasForProduct(p.id);
+      return { ...p, bodegasStr };
+    });
+  } else if (tipo === 'multi-bodega') {
+    // Productos en más de 1 bodega
+    productos = [];
+    examenState.productos.forEach(p => {
+      const bodegasConStock = Object.entries(examenState.inventarioPorBodega)
+        .filter(([bId, inventario]) => {
+          return inventario.some(inv => inv.producto?.id === p.id && inv.stock > 0);
+        });
+      if (bodegasConStock.length > 1) {
+        const bodegasStr = bodegasConStock.map(([bId]) => {
+          const b = examenState.bodegas.find(bx => String(bx.id) === String(bId));
+          return b?.nombre || '?';
+        }).join(', ');
+        productos.push({ ...p, bodegasStr });
+      }
+    });
+  } else if (tipo === 'sin-movimientos') {
+    // Productos sin movimientos - usamos la API de reportes
+    renderProductosSinMovimientos(tbody);
+    return;
+  }
+
+  if (!productos.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;">No se encontraron productos con este criterio.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = productos.map(p => `
+    <tr>
+      <td class="cell-mono">PRD-${p.id}</td>
+      <td><strong>${p.nombre}</strong></td>
+      <td class="cell-mono">${p.categoria || '-'}</td>
+      <td class="is-right"><span class="cell-mono" style="font-weight:600;">${p.stock}</span></td>
+      <td class="is-right"><span class="cell-mono">$${Number(p.precio || 0).toFixed(2)}</span></td>
+      <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.bodegasStr}">
+        ${p.bodegasStr || '<span class="cell-muted">Ninguna</span>'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function renderProductosSinMovimientos(tbody) {
+  tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;"><div class="uikit-spinner"></div><span>Analizando movimientos...</span></td></tr>';
+  try {
+    const movimientos = await apiFetch('/api/movimientos');
+    const productosConMovimientos = new Set();
+    movimientos.forEach(m => {
+      (m.detalles || []).forEach(d => {
+        if (d.producto?.id) productosConMovimientos.add(d.producto.id);
+      });
+    });
+
+    const productosSinMov = examenState.productos
+      .filter(p => !productosConMovimientos.has(p.id))
+      .map(p => {
+        const bodegasStr = getBodegasForProduct(p.id);
+        return { ...p, bodegasStr };
+      });
+
+    if (!productosSinMov.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;">Todos los productos han tenido al menos un movimiento.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = productosSinMov.map(p => `
+      <tr>
+        <td class="cell-mono">PRD-${p.id}</td>
+        <td><strong>${p.nombre}</strong></td>
+        <td class="cell-mono">${p.categoria || '-'}</td>
+        <td class="is-right"><span class="cell-mono" style="font-weight:600;">${p.stock}</span></td>
+        <td class="is-right"><span class="cell-mono">$${Number(p.precio || 0).toFixed(2)}</span></td>
+        <td>${p.bodegasStr || '<span class="cell-muted">Ninguna</span>'}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;">Error: ${err.message}</td></tr>`;
+  }
+}
+
+function getBodegasForProduct(productId) {
+  const entries = [];
+  Object.entries(examenState.inventarioPorBodega).forEach(([bodegaId, inventario]) => {
+    const inv = inventario.find(i => i.producto?.id === productId);
+    if (inv) {
+      const b = examenState.bodegas.find(bx => String(bx.id) === String(bodegaId));
+      entries.push(`${b?.nombre || '?'} (${inv.stock})`);
+    }
+  });
+  return entries.join(', ');
+}
+
+// ============================================================================
+// SECCIÓN 10: Productos por Categoría
+// ============================================================================
+function renderCategorias() {
+  const container = document.getElementById('examen-category-grid');
+  if (!container) return;
+
+  const categorias = {};
+
+  examenState.productos.forEach(p => {
+    const cat = p.categoria || 'Sin categoría';
+    if (!categorias[cat]) {
+      categorias[cat] = { count: 0, stockTotal: 0, valorTotal: 0 };
+    }
+    categorias[cat].count++;
+    categorias[cat].stockTotal += (p.stock || 0);
+    categorias[cat].valorTotal += ((p.stock || 0) * Number(p.precio || 0));
+  });
+
+  const catEntries = Object.entries(categorias).sort((a, b) => b[1].count - a[1].count);
+
+  const iconMap = {
+    'Electronics': 'devices',
+    'electronics': 'devices',
+    'Furniture': 'chair',
+    'furniture': 'chair',
+    'Clothing': 'checkroom',
+    'clothing': 'checkroom',
+    'Home': 'home',
+    'home': 'home',
+    'Jardín': 'yard',
+    'jardín': 'yard',
+    'Hogar': 'home',
+    'hogar': 'home',
+    'Sin categoría': 'category',
+  };
+
+  container.innerHTML = catEntries.map(([cat, data]) => {
+    const icon = iconMap[cat] || 'category';
+    return `
+      <div class="examen-category-card">
+        <span class="material-symbols-outlined examen-category-card__icon">${icon}</span>
+        <h4 class="examen-category-card__name">${cat}</h4>
+        <span class="examen-category-card__count">${data.count}</span>
+        <span class="examen-category-card__stock-total">${data.stockTotal} unidades · $${data.valorTotal.toFixed(2)}</span>
+      </div>`;
+  }).join('');
 }
 

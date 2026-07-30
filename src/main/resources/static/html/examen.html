@@ -291,7 +291,7 @@
           </div>
         </div>
 
-        <!-- ================================================================ -->
+<!-- ================================================================ -->
         <!-- SECCIÓN 5: Resumen de Inventario Global                          -->
         <!-- ================================================================ -->
         <div class="examen-section">
@@ -326,6 +326,219 @@
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 6: Top 20 Productos Más Movidos                          -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">trending_up</span>
+            <h3 class="examen-section__title">Top 20 Productos Más Movidos</h3>
+          </div>
+
+          <div class="examen-inline-filters" id="top-movidos-filters">
+            <div class="form-group">
+              <label class="form-label">Rango de días</label>
+              <div class="select-wrapper" style="width:160px;">
+                <select class="form-select" id="top-movidos-dias">
+                  <option value="7">Últimos 7 días</option>
+                  <option value="30" selected>Últimos 30 días</option>
+                  <option value="90">Últimos 90 días</option>
+                  <option value="180">Últimos 180 días</option>
+                  <option value="365">Últimos 365 días</option>
+                </select>
+                <span class="material-symbols-outlined">expand_more</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">&nbsp;</label>
+              <button class="toolbar-btn toolbar-btn--primary" type="button" id="top-movidos-apply">
+                <span class="material-symbols-outlined icon-sm">refresh</span>
+                Actualizar
+              </button>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-card__scroll">
+              <table class="data-table" id="examen-top-movidos-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th class="is-right">Total Movido</th>
+                    <th class="is-right">Stock Actual</th>
+                  </tr>
+                </thead>
+                <tbody id="examen-top-movidos-tbody">
+                  <tr><td colspan="5" class="is-center cell-muted" style="padding:2rem;">Cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 7: Movimientos por Tipo y Bodega                         -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">swap_horiz</span>
+            <h3 class="examen-section__title">Movimientos por Tipo y Bodega</h3>
+          </div>
+
+          <div class="examen-inline-filters" id="mov-tipo-bodega-filters">
+            <div class="form-group">
+              <label class="form-label">Tipo de Movimiento</label>
+              <div class="select-wrapper" style="width:180px;">
+                <select class="form-select" id="mov-tipo-bodega-tipo">
+                  <option value="">Todos</option>
+                  <option value="ENTRADA">ENTRADA</option>
+                  <option value="SALIDA">SALIDA</option>
+                  <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                </select>
+                <span class="material-symbols-outlined">expand_more</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bodega</label>
+              <div class="select-wrapper" style="width:200px;">
+                <select class="form-select" id="mov-tipo-bodega-bodega">
+                  <option value="">Todas las bodegas</option>
+                </select>
+                <span class="material-symbols-outlined">expand_more</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rango de fecha</label>
+              <div class="examen-filters__range">
+                <input class="form-input" id="mov-tipo-bodega-desde" type="date">
+                <span class="examen-filters__range-sep">–</span>
+                <input class="form-input" id="mov-tipo-bodega-hasta" type="date">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">&nbsp;</label>
+              <button class="toolbar-btn toolbar-btn--primary" type="button" id="mov-tipo-bodega-apply">
+                <span class="material-symbols-outlined icon-sm">search</span>
+                Filtrar
+              </button>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-card__scroll">
+              <table class="data-table" id="examen-mov-tipo-bodega-table">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Bodega Origen</th>
+                    <th>Bodega Destino</th>
+                    <th class="is-right">Total Movimientos</th>
+                    <th class="is-right">Total Unidades</th>
+                    <th>Usuario</th>
+                  </tr>
+                </thead>
+                <tbody id="examen-mov-tipo-bodega-tbody">
+                  <tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;">Cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 8: Valor del Inventario por Bodega                       -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">payments</span>
+            <h3 class="examen-section__title">Valor del Inventario por Bodega</h3>
+          </div>
+
+          <div class="examen-inline-filters" id="valor-bodega-filters">
+            <div class="form-group">
+              <label class="form-label">Bodega</label>
+              <div class="select-wrapper" style="width:200px;">
+                <select class="form-select" id="valor-bodega-select">
+                  <option value="">Todas las bodegas</option>
+                </select>
+                <span class="material-symbols-outlined">expand_more</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ordenar por</label>
+              <div class="select-wrapper" style="width:180px;">
+                <select class="form-select" id="valor-bodega-order">
+                  <option value="valor-desc">Valor (mayor a menor)</option>
+                  <option value="valor-asc">Valor (menor a mayor)</option>
+                  <option value="nombre">Nombre A-Z</option>
+                  <option value="productos">Cantidad productos</option>
+                </select>
+                <span class="material-symbols-outlined">expand_more</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="examen-capacity-grid" id="examen-valor-grid">
+            <div class="examen-loading"><div class="uikit-spinner"></div><span>Cargando...</span></div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 9: Productos sin Stock y en Múltiples Bodegas            -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">inventory</span>
+            <h3 class="examen-section__title">Productos Sin Stock / En Múltiples Bodegas</h3>
+            <div class="examen-section__actions">
+              <div class="select-wrapper" style="width:220px;">
+                <select class="form-select" id="productos-especiales-tipo">
+                  <option value="sin-stock">Productos sin stock (0 unidades)</option>
+                  <option value="multi-bodega">Productos en múltiples bodegas</option>
+                  <option value="sin-movimientos">Productos sin movimientos</option>
+                </select>
+                <span class="material-symbols-outlined">expand_more</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-card__scroll">
+              <table class="data-table" id="examen-productos-especiales-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th class="is-right">Stock Global</th>
+                    <th class="is-right">Precio</th>
+                    <th>Bodegas</th>
+                  </tr>
+                </thead>
+                <tbody id="examen-productos-especiales-tbody">
+                  <tr><td colspan="6" class="is-center cell-muted" style="padding:2rem;">Cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- SECCIÓN 10: Conteo de Productos por Categoría                    -->
+        <!-- ================================================================ -->
+        <div class="examen-section">
+          <div class="examen-section__header">
+            <span class="material-symbols-outlined examen-section__icon">category</span>
+            <h3 class="examen-section__title">Productos por Categoría</h3>
+          </div>
+
+          <div class="examen-category-grid" id="examen-category-grid">
+            <div class="examen-loading"><div class="uikit-spinner"></div><span>Cargando...</span></div>
           </div>
         </div>
 
